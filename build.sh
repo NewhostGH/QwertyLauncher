@@ -25,9 +25,11 @@ if [ -z "$AAPT2" ]; then
 fi
 
 mode=$1
+# Only the app's APK: the features are bundled as module zips built from their release
+# variant (packModule), so building their own debug and release AARs too only doubles the work.
 case "$1" in
-    "") set -- assembleDebug ;;
-    release) set -- assembleRelease ;;
+    "") set -- :app:assembleDebug ;;
+    release) set -- :app:assembleRelease ;;
     test) set -- testDebugUnitTest ;;
     lint) rm -rf build/lint; set -- lintDebug ;;
     stop) exec sh gradlew --stop ;;

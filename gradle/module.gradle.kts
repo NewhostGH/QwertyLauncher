@@ -8,8 +8,12 @@
 // one on its own, to share or import by hand.
 
 val d8Tool = configurations.create("d8Tool")
-// D8, Android's dexer, the same one AGP runs for the app.
-dependencies.add(d8Tool.name, "com.android.tools:r8:8.5.35")
+// D8, Android's dexer, from the same release line AGP runs for the app (version in libs.versions.toml).
+// An applied script can't see the `libs` accessors, so it reads the catalog by name.
+dependencies.add(
+    d8Tool.name,
+    extensions.getByType(VersionCatalogsExtension::class.java).named("libs").findLibrary("r8").get().get(),
+)
 
 val qmod = layout.buildDirectory.dir("qmod")
 val aar = layout.buildDirectory.file("outputs/aar/${project.name}-release.aar")
