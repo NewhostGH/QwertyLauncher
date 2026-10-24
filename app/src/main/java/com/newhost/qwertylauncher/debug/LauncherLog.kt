@@ -40,11 +40,20 @@ class LauncherLog(context: Context) {
         writer.execute { persist(emptyList()) }
     }
 
-    /** Records uncaught crashes (with the top of the stack) before the process dies. */
-    fun recordCrashes() {
+    /**
+     * Records uncaught crashes (with the top of the stack) before the process dies. [onCrash] hears
+     * of each first and names the module to blame, if any.
+     */
+    fun recordCrashes(onCrash: (Throwable) -> String? = { null }) {
         val previous = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, error ->
-            write(CRASH_TAG, Log.ERROR, "uncaught on ${thread.name}", error, sync = true)
+            val module = try {
+                onCrash(error)
+            } catch (e: Throwable) {
+                null
+            }
+            val where = module?.let { " in module $it" }.orEmpty()
+            write(CRASH_TAG, Log.ERROR, "uncaught on ${thread.name}$where", error, sync = true)
             previous?.uncaughtException(thread, error)
         }
     }

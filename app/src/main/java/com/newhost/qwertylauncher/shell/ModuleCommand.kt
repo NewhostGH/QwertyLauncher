@@ -1,5 +1,7 @@
 package com.newhost.qwertylauncher.shell
 
+import android.os.Handler
+import android.os.Looper
 import com.newhost.qwertylauncher.core.Command
 import com.newhost.qwertylauncher.core.LauncherHost
 import com.newhost.qwertylauncher.core.MenuItem
@@ -14,18 +16,20 @@ import kotlinx.coroutines.withContext
  * `module`: the installed modules (bundled or imported, and any that
  * failed to load), `module import` to add one from a zip, and
  * `module remove <id>` to take an imported one out. Installing or removing
- * restarts the launcher, which is when modules load.
+ * restarts the launcher, which is when modules load. `module crash <id>`
+ * (unlisted) crashes the launcher as if that module had, to try the safe mode.
  */
 internal class ModuleCommand(private val loader: ModuleLoader) : Command {
     override val name = "module"
     override val aliases = listOf("modules")
-    override val usage = "module [import|remove <id>]"
+    override val usage = "module [import|remove <id>|restart]"
     override val summary = "installed modules; import one from a zip"
 
     override suspend fun suggest(args: String): List<SearchResult> {
         val words = args.trim().split(' ').filter { it.isNotEmpty() }
         val verb = words.firstOrNull().orEmpty()
         if (verb == "remove" || verb == "rm") return removals(words.getOrNull(1).orEmpty())
+        if (verb == "crash") return crashes(words.getOrNull(1).orEmpty())
         val typed = verb.lowercase()
         val import = SearchResult(
             key = "module:import",
@@ -39,7 +43,19 @@ internal class ModuleCommand(private val loader: ModuleLoader) : Command {
         val installed = loader.packages
             .filter { typed.isEmpty() || it.manifest.id.startsWith(typed) || it.manifest.name.startsWith(typed) }
             .mapIndexed { i, p -> listing(p, Score.EXACT - 1 - i) }
-        return if ("import".startsWith(typed)) listOf(import) + installed else installed
+        val restart = SearchResult(
+            key = "module:restart",
+            tag = "module",
+            title = "module restart",
+            detail = "restart the launcher, loading the modules afresh",
+            score = Score.EXACT - 1,
+            completion = "module restart",
+            action = { host -> (host as? ShellHost)?.restart() },
+        )
+        return listOfNotNull(
+            import.takeIf { "import".startsWith(typed) },
+            restart.takeIf { typed.isNotEmpty() && "restart".startsWith(typed) },
+        ) + installed
     }
 
     private fun listing(p: ModulePackage, score: Int): SearchResult {
@@ -49,7 +65,7 @@ internal class ModuleCommand(private val loader: ModuleLoader) : Command {
             p.imported -> "imported"
             else -> "bundled"
         }
-        val state = p.problem?.let { "failed: $it" }
+        val state = p.problem?.let { if (p.skipped) it else "failed: $it" }
             ?: p.missingPermissions.takeIf { it.isNotEmpty() }?.let { "lacks ${it.joinToString { perm -> perm.substringAfterLast('.') }}" }
         return SearchResult(
             key = "module:${m.id}",
@@ -58,7 +74,10 @@ internal class ModuleCommand(private val loader: ModuleLoader) : Command {
             detail = listOfNotNull(m.id, from, state).joinToString("  "),
             score = score,
             action = { host -> details(host, p) },
-            menu = if (p.imported) listOf(MenuItem("remove ${m.name} and restart") { h -> remove(h, m.id) }) else emptyList(),
+            menu = listOfNotNull(
+                MenuItem("let ${m.name} load again and restart") { h -> release(h, m.id) }.takeIf { p.held },
+                MenuItem("remove ${m.name} and restart") { h -> remove(h, m.id) }.takeIf { p.imported },
+            ),
         )
     }
 
@@ -74,6 +93,26 @@ internal class ModuleCommand(private val loader: ModuleLoader) : Command {
         )
     }
 
+    private fun crashes(typed: String) = loader.packages.filter { it.module != null && it.manifest.id.startsWith(typed) }.map { p ->
+        SearchResult(
+            key = "module:crash:${p.manifest.id}",
+            tag = "module",
+            title = "module crash ${p.manifest.id}",
+            detail = "crash the launcher as if ${p.manifest.name} had; twice holds it back",
+            score = Score.EXACT,
+            completion = "module crash ${p.manifest.id}",
+            // Outside whatever runs the action, so nothing on the way catches it.
+            action = { Handler(Looper.getMainLooper()).post { throw TestCrash(p.manifest.entry) } },
+        )
+    }
+
+    /** A crash that looks as if it came from [entry]'s code, which is how [CrashGuard] blames a module. */
+    private class TestCrash(entry: String) : RuntimeException("test crash (module crash), as if from $entry") {
+        init {
+            stackTrace = arrayOf(StackTraceElement(entry, "testCrash", null, 0))
+        }
+    }
+
     /** Prints what the module is and says about itself. */
     private fun details(host: LauncherHost, p: ModulePackage) {
         host.clearQuery()
@@ -84,7 +123,13 @@ internal class ModuleCommand(private val loader: ModuleLoader) : Command {
         if (p.missingPermissions.isNotEmpty()) {
             host.console.println("  the launcher lacks ${p.missingPermissions.joinToString { it.substringAfterLast('.') }}: that part won't work")
         }
-        p.problem?.let { host.console.println("  failed to load: $it") }
+        p.problem?.let { host.console.println(if (p.skipped) "  $it" else "  failed to load: $it") }
+        if (p.held) host.console.println("  Hold enter on it here to let it load again. The debug log shows its crashes.")
+    }
+
+    private fun release(host: LauncherHost, id: String) {
+        host.clearQuery()
+        if (loader.release(id)) (host as? ShellHost)?.restart()
     }
 
     private fun pick(host: LauncherHost) {

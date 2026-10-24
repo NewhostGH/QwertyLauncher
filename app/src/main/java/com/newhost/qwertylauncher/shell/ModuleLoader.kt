@@ -9,6 +9,7 @@ import com.newhost.qwertylauncher.core.ModuleApi
 import dalvik.system.DexClassLoader
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
 import java.util.zip.ZipFile
 import org.json.JSONException
 import org.json.JSONObject
@@ -70,6 +71,10 @@ class ModulePackage(
     val problem: String?,
     /** Permissions it uses that the launcher doesn't declare: what needs them won't work. */
     val missingPermissions: List<String>,
+    /** Held back by [CrashGuard] after crashing the launcher: the user can let it load again. */
+    val held: Boolean = false,
+    /** Not loaded on purpose (held back, or safe mode), rather than failing to: [problem] says why. */
+    val skipped: Boolean = false,
 )
 
 /**
@@ -82,7 +87,7 @@ class ModulePackage(
  * one's id takes its place. Loading happens once, at process start: a
  * change takes a restart.
  */
-class ModuleLoader(private val context: Context, private val log: DebugLog) {
+class ModuleLoader(private val context: Context, private val log: DebugLog, private val guard: CrashGuard) {
     private val root = File(context.filesDir, "modules")
     private val bundledDir = File(root, "bundled")
     private val importedDir = File(root, "imported")
@@ -90,6 +95,18 @@ class ModuleLoader(private val context: Context, private val log: DebugLog) {
     /** What [load] found, bundled first in their order, then the imported ones. */
     var packages: List<ModulePackage> = emptyList()
         private set
+
+    /** What [CrashGuard] said this start, for home to tell the user once; null when all went normally. */
+    private var safeNotice: String? = null
+
+    /** The safe mode notice, the first time it's asked for. */
+    fun takeSafeNotice(): String? = safeNotice.also { safeNotice = null }
+
+    /** Each opened module's code package to its id, for blaming a crash; filled in as modules open. */
+    private val codePackages = ConcurrentHashMap<String, String>()
+
+    /** The module to blame for [error], if its code was running; see [CrashGuard.blame]. */
+    fun blame(error: Throwable): String? = CrashGuard.blame(error, codePackages, context.packageName)
 
     /** Loads every installed module; one that can't load is kept in [packages] with its problem, and skipped. */
     fun load(): List<LauncherModule> {
@@ -106,14 +123,42 @@ class ModuleLoader(private val context: Context, private val log: DebugLog) {
         val files = bundled.map { b -> importedIds[b.name.removeSuffix(EXTENSION)]?.let { it to true } ?: (b to false) } +
             imported.filter { it.name.removeSuffix(EXTENSION) !in bundledIds }.map { it to true }
         val declared = declaredPermissions()
+        val (mode, newlyHeld) = guard.start()
+        val held = guard.held
         packages = files.mapNotNull { (file, isImported) ->
             val replaces = isImported && file.name.removeSuffix(EXTENSION) in bundledIds
-            open(file, isImported, replaces, declared)
+            val skip = when {
+                mode == CrashGuard.Mode.NO_MODULES -> "off for this start: the launcher kept crashing"
+                mode == CrashGuard.Mode.NO_IMPORTED && isImported -> "off for this start: the launcher kept crashing"
+                else -> null
+            }
+            open(file, isImported, replaces, declared, skip, held)
         }
+        safeNotice = when {
+            newlyHeld.isNotEmpty() ->
+                "Safe mode: ${newlyHeld.joinToString(" and ")} kept crashing the launcher, so it is held back. " +
+                    "Type module and hold enter on it to let it load again."
+            mode == CrashGuard.Mode.NO_MODULES ->
+                "Safe mode: the launcher kept crashing, so this start loads no modules. Type module restart to try again."
+            mode == CrashGuard.Mode.NO_IMPORTED ->
+                "Safe mode: the launcher kept crashing, so this start leaves out imported modules. Type module restart to try again."
+            else -> null
+        }
+        safeNotice?.let { log.d(it) }
         return packages.mapNotNull { it.module }
     }
 
-    private fun open(file: File, imported: Boolean, replaces: Boolean, declared: Set<String>): ModulePackage? {
+    /** Lets a module held back after crashing load again; takes a restart. */
+    fun release(id: String): Boolean = guard.release(id).also { if (it) log.d("let $id load again") }
+
+    private fun open(
+        file: File,
+        imported: Boolean,
+        replaces: Boolean,
+        declared: Set<String>,
+        skip: String?,
+        held: Set<String>,
+    ): ModulePackage? {
         val manifest = try {
             ModuleManifest.read(file)
         } catch (e: IOException) {
@@ -121,14 +166,18 @@ class ModuleLoader(private val context: Context, private val log: DebugLog) {
             return null
         }
         val missing = manifest.permissions.filter { it !in declared }
-        fun result(module: LauncherModule?, problem: String?) =
-            ModulePackage(manifest, file, imported, replaces, module, problem, missing)
+        val isHeld = manifest.id in held
+        fun result(module: LauncherModule?, problem: String?, skipped: Boolean = false) =
+            ModulePackage(manifest, file, imported, replaces, module, problem, missing, isHeld, skipped)
+        if (isHeld) return result(null, "held back: it kept crashing the launcher", skipped = true)
+        if (skip != null) return result(null, skip, skipped = true)
         if (manifest.api > ModuleApi.VERSION) {
             return result(null, "needs a newer launcher (module api ${manifest.api}, this is ${ModuleApi.VERSION})")
         }
         return try {
             // Android refuses to load code from a file the app could still change.
             file.setReadOnly()
+            codePackages[manifest.entry.substringBeforeLast('.', "")] = manifest.id
             val loader = DexClassLoader(file.path, null, null, ModuleLoader::class.java.classLoader)
             val module = loader.loadClass(manifest.entry).getDeclaredConstructor().newInstance() as LauncherModule
             if (module.id != manifest.id) log.d("module ${manifest.id}: its class says id '${module.id}'")

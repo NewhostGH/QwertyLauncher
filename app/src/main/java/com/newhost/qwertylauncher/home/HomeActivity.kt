@@ -150,6 +150,8 @@ class HomeActivity : AppCompatActivity(), LauncherHost, ShellHost {
             val version = packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0)).versionName
             prompt.printBootBanner(version ?: "")
         }
+        // Once per process: why some modules are off after the launcher kept crashing.
+        (application as LauncherApplication).modules.takeSafeNotice()?.let { console.println(it) }
         if (savedInstanceState == null && !isDefaultHome()) {
             console.println("To use this as your home screen, run: settings home")
         }

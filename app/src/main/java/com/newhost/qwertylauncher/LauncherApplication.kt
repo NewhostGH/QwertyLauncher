@@ -5,9 +5,11 @@ import android.content.ComponentName
 import com.newhost.qwertylauncher.core.NotificationHost
 import com.newhost.qwertylauncher.debug.LauncherLog
 import com.newhost.qwertylauncher.settings.DataStoreSettings
+import com.newhost.qwertylauncher.shell.CrashGuard
 import com.newhost.qwertylauncher.shell.HostNotificationListener
 import com.newhost.qwertylauncher.shell.ModuleLoader
 import com.newhost.qwertylauncher.shell.ModuleRegistry
+import java.io.File
 
 class LauncherApplication : Application() {
 
@@ -23,11 +25,14 @@ class LauncherApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        log = LauncherLog(this).apply { recordCrashes() }
+        log = LauncherLog(this)
+        // Every feature is a module zip: the bundled ones, then any the user imported. A module
+        // that keeps crashing the launcher is held back (CrashGuard), so home always opens.
+        val guard = CrashGuard(File(filesDir, "crashguard"))
+        modules = ModuleLoader(this, log.tagged("modules"), guard)
+        log.recordCrashes { error -> modules.blame(error).also { guard.record(it) } }
         settings = DataStoreSettings(this)
         NotificationHost.component = ComponentName(this, HostNotificationListener::class.java)
-        // Every feature is a module zip: the bundled ones, then any the user imported.
-        modules = ModuleLoader(this, log.tagged("modules"))
         registry = ModuleRegistry(this, modules.load(), settings, log, modules)
     }
 }
