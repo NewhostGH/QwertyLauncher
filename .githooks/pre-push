@@ -38,6 +38,9 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     else
         range="$remote_sha..$local_sha"
     fi
+    if [ "$branch" = main ] && [ -n "$(git rev-list --merges $range)" ]; then
+        fail "a merge commit is headed for main; main is a straight line. Rebase the branch and fast-forward instead."
+    fi
     for c in $(git rev-list $range); do
         git log -1 --format=%B "$c" > "$msgfile"
         sh "$hooks/commit-msg" "$msgfile" 2>/dev/null ||
