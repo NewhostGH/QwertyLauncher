@@ -47,6 +47,11 @@ interface ShellHost {
 
     /** Starts the launcher afresh, in a new process: how modules load again. */
     fun restart()
+
+    fun openConfig()
+
+    /** Lets the user choose where to save a new JSON file, suggesting [name]; [onPicked] gets it, if they did. */
+    fun createJsonFile(name: String, onPicked: (Uri) -> Unit)
 }
 
 /** `help`: opens the help pane, listing every command and key. */

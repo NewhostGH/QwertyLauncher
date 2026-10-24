@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStoreFile
 import com.newhost.qwertylauncher.core.ChoiceSetting
@@ -118,6 +119,46 @@ class DataStoreSettings(context: Context) : SettingsStore {
     }
 
     private fun name(setting: Setting<*>): String = synchronized(names) { names[setting] } ?: setting.key
+
+    /** Every stored value by its storage key, for `config export`; values never set aren't there. */
+    fun storedValues(): Map<String, Any> =
+        snapshot.value.asMap().entries
+            .filter { SettingsFile.isStorable(it.value) }
+            .associate { it.key.name to it.value }
+
+    /**
+     * [values] (by storage key) without any of the wrong kind for their setting,
+     * which a hand-edited file could have. Keys no setting declares (a module
+     * that isn't installed) are kept as they are.
+     */
+    fun fitting(values: Map<String, Any>): Map<String, Any> {
+        val fits: Map<String, (Any) -> Boolean> = synchronized(names) {
+            names.entries.associate { (setting, name) ->
+                name to when (setting) {
+                    is ToggleSetting -> { value: Any -> value is Boolean }
+                    is NumberSetting -> { value: Any -> value is Int }
+                    is ChoiceSetting, is MultiChoiceSetting -> { value: Any -> value is String }
+                }
+            }
+        }
+        return values.filter { (name, value) -> fits[name]?.invoke(value) ?: true }
+    }
+
+    /** Replaces every stored value with the [fitting] ones of [values], for `config import`. */
+    suspend fun replaceAll(values: Map<String, Any>) {
+        val fitting = fitting(values)
+        dataStore.edit { stored ->
+            stored.clear()
+            for ((name, value) in fitting) {
+                when (value) {
+                    is Boolean -> stored[booleanPreferencesKey(name)] = value
+                    is Int -> stored[intPreferencesKey(name)] = value
+                    is Long -> stored[longPreferencesKey(name)] = value
+                    is String -> stored[stringPreferencesKey(name)] = value
+                }
+            }
+        }
+    }
 
     private companion object {
         const val TAG = "DataStoreSettings"

@@ -104,6 +104,13 @@ class HomeActivity : AppCompatActivity(), LauncherHost, ShellHost {
         if (uri != null) onPicked?.invoke(uri)
     }
 
+    private var pendingCreate: ((Uri) -> Unit)? = null
+    private val jsonCreate = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        val onPicked = pendingCreate
+        pendingCreate = null
+        if (uri != null) onPicked?.invoke(uri)
+    }
+
     private var pendingPermissionCallback: ((Boolean) -> Unit)? = null
     private val permissionRequest = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         pendingPermissionCallback?.invoke(granted)
@@ -333,6 +340,18 @@ class HomeActivity : AppCompatActivity(), LauncherHost, ShellHost {
             filePick.launch(types)
         } catch (e: ActivityNotFoundException) {
             pendingPick = null
+            console.println("no file picker on this phone")
+        }
+    }
+
+    override fun openConfig() = viewModel.openPane(Pane.CONFIG)
+
+    override fun createJsonFile(name: String, onPicked: (Uri) -> Unit) {
+        pendingCreate = onPicked
+        try {
+            jsonCreate.launch(name)
+        } catch (e: ActivityNotFoundException) {
+            pendingCreate = null
             console.println("no file picker on this phone")
         }
     }

@@ -24,6 +24,7 @@ import com.newhost.qwertylauncher.debug.DebugCommand
 import com.newhost.qwertylauncher.debug.DebugPane
 import com.newhost.qwertylauncher.debug.LauncherLog
 import com.newhost.qwertylauncher.settings.DataStoreSettings
+import com.newhost.qwertylauncher.settings.SettingsTransfer
 import kotlin.reflect.KClass
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -133,6 +134,7 @@ class ModuleRegistry(
         ClearCommand(),
         DebugCommand(DebugPane(context.applicationContext, launcherLog)),
         ModuleCommand(loader),
+        ConfigCommand(SettingsTransfer(context.applicationContext, settings)),
     )
     private val shellProviders = listOf(CommandSearchProvider { commands })
 
