@@ -1,0 +1,46 @@
+<resources>
+    <!-- One look everywhere: the terminal is always dark, and nothing a terminal couldn't show. -->
+    <style name="Base.AppTheme" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="android:windowBackground">@color/tty_bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="ttyFontFamily">@font/jetbrains_mono</item>
+        <item name="android:fontFamily">?attr/ttyFontFamily</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:textColor">@color/tty_fg</item>
+        <item name="colorPrimary">@color/tty_fg</item>
+        <item name="colorAccent">@color/tty_fg</item>
+        <!-- No translucent grey overlay on focused views: selection is reverse video or a solid colour. -->
+        <item name="android:defaultFocusHighlightEnabled">false</item>
+        <!-- Home draws into the status bar's place and around the notch; the top bar steps around it. -->
+        <item name="android:windowLayoutInDisplayCutoutMode">always</item>
+        <!-- Screens change instantly, like a terminal redrawing. -->
+        <item name="android:windowAnimationStyle">@null</item>
+        <!-- The prompt has no text selection: no translucent highlight, handles or copy bar. -->
+        <item name="android:textColorHighlight">@color/tty_sel</item>
+        <item name="android:textSelectHandle">@drawable/tty_none</item>
+        <item name="android:textSelectHandleLeft">@drawable/tty_none</item>
+        <item name="android:textSelectHandleRight">@drawable/tty_none</item>
+    </style>
+
+    <style name="AppTheme" parent="Base.AppTheme" />
+
+    <!-- The font setting: applied over the theme when home starts. -->
+    <style name="TtyFontOverlay" />
+
+    <style name="TtyFontOverlay.JetBrains">
+        <item name="ttyFontFamily">@font/jetbrains_mono</item>
+    </style>
+
+    <style name="TtyFontOverlay.DejaVu">
+        <item name="ttyFontFamily">@font/dejavu_sans_mono</item>
+    </style>
+
+    <style name="TtyFontOverlay.Plex">
+        <item name="ttyFontFamily">@font/ibm_plex_mono</item>
+    </style>
+
+    <style name="TtyFontOverlay.System">
+        <item name="ttyFontFamily">monospace</item>
+    </style>
+</resources>

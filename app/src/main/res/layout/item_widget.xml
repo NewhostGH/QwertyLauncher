@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One tile: a text-drawn frame around the widget's grid (added in code, fitted to the tile).
+     Focusable so the home cursor (arrows, scrolling) can select it; Enter taps it. -->
+<com.newhost.qwertylauncher.ui.TileFrame xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:focusable="true" />

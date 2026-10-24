@@ -1,0 +1,8 @@
+{
+  "id": "system",
+  "name": "system",
+  "version": 1,
+  "api": 1,
+  "entry": "com.newhost.qwertylauncher.feature.system.SystemModule",
+  "permissions": []
+}

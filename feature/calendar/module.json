@@ -1,0 +1,10 @@
+{
+  "id": "calendar",
+  "name": "agenda",
+  "version": 1,
+  "api": 1,
+  "entry": "com.newhost.qwertylauncher.feature.calendar.CalendarModule",
+  "permissions": [
+    "android.permission.READ_CALENDAR"
+  ]
+}

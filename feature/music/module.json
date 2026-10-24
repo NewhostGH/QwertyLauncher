@@ -1,0 +1,8 @@
+{
+  "id": "music",
+  "name": "music",
+  "version": 1,
+  "api": 1,
+  "entry": "com.newhost.qwertylauncher.feature.music.MusicModule",
+  "permissions": []
+}

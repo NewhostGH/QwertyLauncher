@@ -1,0 +1,10 @@
+{
+  "id": "network",
+  "name": "network",
+  "version": 1,
+  "api": 1,
+  "entry": "com.newhost.qwertylauncher.feature.network.NetworkModule",
+  "permissions": [
+    "android.permission.ACCESS_NETWORK_STATE"
+  ]
+}

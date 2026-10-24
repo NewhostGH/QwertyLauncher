@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/tty_bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/tty_gutter"
+        android:paddingBottom="@dimen/tty_gutter">
+
+        <!-- Where the phone's status bar would be: the help and config buttons, each on the left,
+             in the middle or on the right (hold enter on one to move it), clear of any notch. -->
+        <com.newhost.qwertylauncher.ui.TopBar
+            android:id="@+id/topBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <!-- Help, drawn as an ASCII question mark at runtime (or "[?]" without the ascii module). -->
+            <com.newhost.qwertylauncher.ui.ArtView
+                android:id="@+id/helpButton"
+                style="@style/TtyText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:contentDescription="@string/help_button"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="@string/help_fallback" />
+
+            <!-- The wrench, drawn as ASCII art at runtime (or "[cfg]" without the ascii module). -->
+            <com.newhost.qwertylauncher.ui.ArtView
+                android:id="@+id/configButton"
+                style="@style/TtyText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:clickable="true"
+                android:contentDescription="@string/config_button"
+                android:focusable="true"
+                android:gravity="center"
+                android:text="@string/config_fallback" />
+        </com.newhost.qwertylauncher.ui.TopBar>
+
+        <!-- tmux-style status line, in place of the phone's status bar: session and panes. -->
+        <TextView
+            android:id="@+id/hostLabel"
+            style="@style/TtyText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/tty_fg"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="@color/tty_bg" />
+
+        <!-- Tiles (widgets and panels such as favourites), laid out tmux-style. Scrolls when they
+             outgrow the screen. Hidden while searching. -->
+        <com.newhost.qwertylauncher.ui.TtyScrollView
+            android:id="@+id/home"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fillViewport="true">
+
+            <com.newhost.qwertylauncher.ui.TileLayout
+                android:id="@+id/widgets"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </com.newhost.qwertylauncher.ui.TtyScrollView>
+
+        <!-- Full-screen panes, in place of widgets and panels while open. -->
+        <include
+            android:id="@+id/config"
+            layout="@layout/view_pane"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:visibility="gone" />
+
+        <include
+            android:id="@+id/help"
+            layout="@layout/view_pane"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:visibility="gone" />
+
+        <!-- Panes modules open with LauncherHost.showPane (e.g. notifications). -->
+        <include
+            android:id="@+id/modulePane"
+            layout="@layout/view_pane"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:visibility="gone" />
+
+        <!-- Console history, above the search results: older output on top, like a terminal. -->
+        <com.newhost.qwertylauncher.ui.TtyScrollView
+            android:id="@+id/consoleScroll"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="0.6"
+            android:focusable="false"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/console"
+                style="@style/TtyText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </com.newhost.qwertylauncher.ui.TtyScrollView>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/results"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:focusable="false"
+            android:visibility="gone" />
+
+
+        <!-- Shown while the prompt is closed. Any key, or a tap here, opens it. -->
+        <TextView
+            android:id="@+id/idleHint"
+            style="@style/TtyText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/tty_dim" />
+
+        <LinearLayout
+            android:id="@+id/prompt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/promptLabel"
+                style="@style/TtyText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/tty_accent" />
+
+            <!-- Sees keys before the keyboard app, so holding enter on a result can be told apart. -->
+            <com.newhost.qwertylauncher.ui.PromptInput
+                android:id="@+id/query"
+                style="@style/TtyText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@null"
+                android:hint="@string/prompt_hint"
+                android:imeOptions="actionGo|flagNoExtractUi"
+                android:importantForAutofill="no"
+                android:inputType="text|textNoSuggestions"
+                android:maxLines="1"
+                android:padding="0dp"
+                android:textColorHint="@color/tty_dim" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- A module's own full screen (LauncherHost.showScreen), over everything: a game. -->
+    <FrameLayout
+        android:id="@+id/screenOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/tty_bg"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone" />
+
+    <!-- ASCII menus (LauncherHost.showMenu): tapping outside the box closes it. -->
+    <FrameLayout
+        android:id="@+id/menuOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/menuBox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:background="@color/tty_bg"
+            android:orientation="vertical" />
+    </FrameLayout>
+</FrameLayout>

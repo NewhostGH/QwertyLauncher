@@ -1,0 +1,45 @@
+#!/bin/sh
+# Checks the branch and the staged files against the rules in CONTRIBUTING.md.
+
+fail() {
+    echo "pre-commit: $1" >&2
+    echo "  rules: CONTRIBUTING.md" >&2
+    exit 1
+}
+
+# Branch: never main (except the very first commit), and named type/short-name.
+# Detached HEAD (during a rebase) is fine: the branch was checked when its commits were made.
+branch=$(git symbolic-ref --short -q HEAD)
+if [ "$branch" = main ]; then
+    git rev-parse -q --verify HEAD >/dev/null &&
+        fail "don't commit on main. Start a branch: git switch -c feat/<what-it-does>"
+elif [ -n "$branch" ]; then
+    sh "$(git rev-parse --show-toplevel)/.githooks/branch-name" "$branch" || exit 1
+fi
+
+# Files that must never be committed: signing secrets, build output, logs.
+bad=$(git diff --cached --name-only --diff-filter=AR | grep -E \
+    '(^|/)(release\.properties|local\.properties|build-log\.txt)$|\.(keystore|jks|apk|aab|dex|qmod)$|(^|/)build/' )
+[ -z "$bad" ] || fail "these must never be committed (signing secrets or build output):
+$bad"
+
+# Big files: nothing in the project is near 1 MB; a bigger one is almost always a mistake.
+big=$(git diff --cached --name-only --diff-filter=AMR -z | xargs -0 -r sh -c '
+    for f; do
+        size=$(git cat-file -s ":$f" 2>/dev/null) || continue
+        [ "$size" -gt 1048576 ] && echo "$f ($((size / 1024)) KB)"
+    done' sh)
+[ -z "$big" ] || fail "files over 1 MB:
+$big"
+
+# Added lines: leftover conflict markers and things that look like keys.
+added=$(git diff --cached -U0 --no-color --diff-filter=AMR | grep '^+' | grep -v '^+++')
+printf '%s\n' "$added" | grep -Eq '^\+(<<<<<<<|>>>>>>>)( |$)' &&
+    fail "a merge conflict marker (<<<<<<< or >>>>>>>) is staged"
+keys=$(printf '%s\n' "$added" | grep -En \
+    'sk-ant-[A-Za-z0-9_-]{20,}|sk-(proj-)?[A-Za-z0-9]{32,}|AIza[0-9A-Za-z_-]{35}|gh[pousr]_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{40,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|(store|key)Password=[^$ ]' |
+    cut -c1-80)
+[ -z "$keys" ] || fail "this looks like an API key, token or password:
+$keys"
+
+exit 0

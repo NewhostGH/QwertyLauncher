@@ -1,0 +1,8 @@
+{
+  "id": "asciiicons",
+  "name": "ascii art",
+  "version": 1,
+  "api": 1,
+  "entry": "com.newhost.qwertylauncher.feature.asciiicons.AsciiIconsModule",
+  "permissions": []
+}

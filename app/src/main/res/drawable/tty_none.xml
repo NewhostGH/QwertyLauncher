@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nothing at all: used to hide the text selection handles. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <size android:width="0dp" android:height="0dp" />
+    <solid android:color="@android:color/transparent" />
+</shape>

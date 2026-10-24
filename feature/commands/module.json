@@ -1,0 +1,10 @@
+{
+  "id": "commands",
+  "name": "commands",
+  "version": 1,
+  "api": 1,
+  "entry": "com.newhost.qwertylauncher.feature.commands.BuiltinCommandsModule",
+  "permissions": [
+    "com.android.alarm.permission.SET_ALARM"
+  ]
+}

@@ -1,0 +1,57 @@
+#!/bin/sh
+# Checks a commit message against the rules in CONTRIBUTING.md.
+#   commit-msg <message file>
+# pre-push runs it too, on every commit it's about to send.
+
+file=$1
+root=$(git rev-parse --show-toplevel)
+
+# The message as it will be saved: no comments, nothing below `git commit -v`'s scissors line.
+msg=$(sed '/^# -\{8,\} >8 -\{8,\}$/,$d' "$file" | git stripspace --strip-comments)
+header=$(printf '%s\n' "$msg" | sed -n 1p)
+
+fail() {
+    echo "commit message: $1" >&2
+    echo "  header: $header" >&2
+    echo "  rules: CONTRIBUTING.md, under Commits" >&2
+    exit 1
+}
+
+[ -n "$header" ] || fail "it's empty"
+
+# Messages git writes itself, and autosquash markers, pass as they are.
+case $header in
+    "Merge "* | 'Revert "'* | "fixup! "* | "squash! "* | "amend! "*) exit 0 ;;
+esac
+
+types="feat|fix|perf|refactor|style|test|docs|build|chore|revert"
+printf '%s\n' "$header" | grep -Eq "^($types)(\([a-z0-9_,-]+\))?!?: [^ ]" ||
+    fail "the first line must be 'type(scope): subject', type one of: $(echo "$types" | tr '|' ' ')"
+
+# Scopes: core, app, a feature module, or one of the project-wide ones.
+scope=$(printf '%s\n' "$header" | sed -n 's/^[a-z]*(\([^)]*\)).*/\1/p')
+if [ -n "$scope" ]; then
+    known="core app build deps hooks fdroid release $(sed -n 's/^include(":feature:\([a-z0-9_]*\)").*/\1/p' "$root/settings.gradle.kts" | tr "\n" " ")"
+    for s in $(echo "$scope" | tr ',' ' '); do
+        case " $known " in
+            *" $s "*) ;;
+            *) fail "unknown scope '$s'; use one of: $known" ;;
+        esac
+    done
+fi
+
+[ ${#header} -le 72 ] || fail "the first line is ${#header} characters; keep it to 72"
+
+subject=${header#*: }
+case $subject in
+    [A-Z]*) fail "start the subject in lower case" ;;
+    *.) fail "no full stop at the end of the subject" ;;
+esac
+
+line2=$(printf '%s\n' "$msg" | sed -n 2p)
+[ -z "$line2" ] || fail "leave the second line blank, between the subject and the body"
+
+long=$(printf '%s\n' "$msg" | sed 1d | grep -v '://' | awk 'length > 100' | head -1)
+[ -z "$long" ] || fail "body lines are 100 characters at most (links excepted): '$long'"
+
+exit 0

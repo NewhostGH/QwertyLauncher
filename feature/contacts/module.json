@@ -1,0 +1,10 @@
+{
+  "id": "contacts",
+  "name": "contacts",
+  "version": 1,
+  "api": 1,
+  "entry": "com.newhost.qwertylauncher.feature.contacts.ContactsModule",
+  "permissions": [
+    "android.permission.READ_CONTACTS"
+  ]
+}

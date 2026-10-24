@@ -1,0 +1,10 @@
+{
+  "id": "apps",
+  "name": "apps",
+  "version": 1,
+  "api": 1,
+  "entry": "com.newhost.qwertylauncher.feature.apps.AppsModule",
+  "permissions": [
+    "android.permission.REQUEST_DELETE_PACKAGES"
+  ]
+}

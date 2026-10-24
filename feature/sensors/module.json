@@ -1,0 +1,10 @@
+{
+  "id": "sensors",
+  "name": "sensors",
+  "version": 1,
+  "api": 1,
+  "entry": "com.newhost.qwertylauncher.feature.sensors.SensorsModule",
+  "permissions": [
+    "android.permission.ACTIVITY_RECOGNITION"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "id": "suggest",
+  "name": "suggestions",
+  "version": 1,
+  "api": 1,
+  "entry": "com.newhost.qwertylauncher.feature.suggest.SuggestModule",
+  "permissions": [
+    "android.permission.ACCESS_NETWORK_STATE"
+  ]
+}

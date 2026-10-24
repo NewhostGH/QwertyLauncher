@@ -1,0 +1,10 @@
+{
+  "id": "files",
+  "name": "files",
+  "version": 1,
+  "api": 1,
+  "entry": "com.newhost.qwertylauncher.feature.files.FilesModule",
+  "permissions": [
+    "android.permission.MANAGE_EXTERNAL_STORAGE"
+  ]
+}

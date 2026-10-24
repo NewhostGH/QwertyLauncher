@@ -1,0 +1,1 @@
+First release: a terminal home screen for QWERTY phones, with type-to-search and commands, ASCII-art tiles, games, Sir Alex the herald, and modules you can import from zip files.

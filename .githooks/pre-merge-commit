@@ -1,0 +1,9 @@
+#!/bin/sh
+# main's history is a straight line: branches join it by fast-forward only (see CONTRIBUTING.md).
+
+if [ "$(git symbolic-ref --short -q HEAD)" = main ]; then
+    echo "pre-merge-commit: no merge commits on main. Rebase the branch first, then fast-forward:" >&2
+    echo "  git switch <branch> && git rebase main && git switch main && git merge --ff-only <branch>" >&2
+    exit 1
+fi
+exit 0

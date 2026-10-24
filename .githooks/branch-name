@@ -1,0 +1,11 @@
+#!/bin/sh
+# Checks a branch name against the rules in CONTRIBUTING.md; used by pre-commit and pre-push.
+#   branch-name <name>
+
+name=$1
+[ "$name" = main ] && exit 0
+printf '%s\n' "$name" | grep -Eq '^(feat|fix|perf|refactor|style|test|docs|build|chore)/[a-z0-9]+(-[a-z0-9]+)*$' && exit 0
+
+echo "branch name '$name' doesn't follow the rules: type/short-name in lower case with hyphens," >&2
+echo "  for example feat/safe-mode or fix/weather-timeout. Rename it: git branch -m <new-name>" >&2
+exit 1

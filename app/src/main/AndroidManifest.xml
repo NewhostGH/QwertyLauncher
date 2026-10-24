@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Modules are loaded from zips at run time, so their manifests are never merged: Android grants
+  permissions and runs components only from the APK's own manifest. Everything a bundled module
+  needs is declared here, and a module's module.json lists what it uses; a module imported later
+  can only have what this manifest declares.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ai, news, weather. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- apps: the `uninstall` command and menu entry. -->
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+    <!-- calendar: read-only, for the month view and the agenda. -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <!-- commands: AlarmClock.ACTION_SET_ALARM / ACTION_SET_TIMER. -->
+    <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
+    <!-- contacts. -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- files: "all files access", asked for from the files pane (not on the Play Store, so no policy review). -->
+    <uses-permission
+        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
+    <!-- network, suggest, toggles: the connection. Normal permissions: granted at install. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <!-- sensors: the step counter, asked for only when you tap for steps. -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <!-- sky, weather: roughly where you are. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- toggles: bluetooth (the system confirms), do not disturb, and system settings once allowed. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <uses-permission
+        android:name="android.permission.WRITE_SETTINGS"
+        tools:ignore="ProtectedPermissions" />
+
+    <!-- Package visibility: apps with a launcher activity (apps, music), music players, and
+         screens toggles opens by name that aren't on every phone. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.APP_MUSIC" />
+        </intent>
+        <intent>
+            <action android:name="android.media.browse.MediaBrowserService" />
+        </intent>
+        <intent>
+            <action android:name="android.bluetooth.adapter.action.REQUEST_ENABLE" />
+        </intent>
+        <intent>
+            <action android:name="android.bluetooth.adapter.action.REQUEST_DISABLE" />
+        </intent>
+        <intent>
+            <action android:name="android.settings.TETHER_SETTINGS" />
+        </intent>
+        <intent>
+            <action android:name="android.settings.DARK_THEME_SETTINGS" />
+        </intent>
+        <intent>
+            <action android:name="android.settings.WIRELESS_SETTINGS" />
+        </intent>
+        <intent>
+            <action android:name="android.settings.DISPLAY_SETTINGS" />
+        </intent>
+        <intent>
+            <action android:name="android.settings.BLUETOOTH_SETTINGS" />
+        </intent>
+        <intent>
+            <action android:name="android.media.action.STILL_IMAGE_CAMERA" />
+        </intent>
+    </queries>
+
+    <application
+        android:name=".LauncherApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        android:usesCleartextTraffic="true">
+        <!-- usesCleartextTraffic: ai's Ollama and other self-hosted servers are often plain http on the local network. -->
+
+        <!-- keyboard|keyboardHidden|navigation: attaching or detaching a keyboard shouldn't recreate home. -->
+        <activity
+            android:name=".home.HomeActivity"
+            android:clearTaskOnLaunch="true"
+            android:configChanges="keyboard|keyboardHidden|navigation"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:stateNotNeeded="true"
+            android:windowSoftInputMode="adjustResize|stateHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.HOME" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- The system's app-info "settings" link opens home straight into config. -->
+            <intent-filter>
+                <action android:name="android.intent.action.APPLICATION_PREFERENCES" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- The notification listener modules read through (notifications, music); only runs once
+             the user grants notification access. -->
+        <service
+            android:name=".shell.HostNotificationListener"
+            android:exported="true"
+            android:label="QwertyLauncher notifications"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <!-- files: hands a file to another app (open with, share) without exposing the storage path. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+</manifest>

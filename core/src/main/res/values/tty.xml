@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The terminal look shared by the shell and every feature module. -->
+<resources>
+    <color name="tty_bg">#FF000000</color>
+    <color name="tty_fg">#FF33FF66</color>
+    <color name="tty_dim">#FF1E8C3E</color>
+    <color name="tty_accent">#FFFFB000</color>
+    <color name="tty_sel">#FF0F3D1C</color>
+
+    <!-- ANSI-style accents for tags, bars and art. -->
+    <color name="tty_red">#FFFF5555</color>
+    <color name="tty_yellow">#FFFFD75F</color>
+    <color name="tty_blue">#FF5FAFFF</color>
+    <color name="tty_magenta">#FFFF79C6</color>
+    <color name="tty_cyan">#FF5FFFFF</color>
+    <color name="tty_white">#FFE6E6E6</color>
+
+    <dimen name="tty_gutter">12dp</dimen>
+
+    <!-- Terminal text: the chosen terminal font, with no padding above or below the glyphs,
+         so lines stack on an exact grid like a console. -->
+    <style name="TtyText">
+        <item name="android:fontFamily">?attr/ttyFontFamily</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:textColor">@color/tty_fg</item>
+        <item name="android:textSize">12sp</item>
+    </style>
+</resources>

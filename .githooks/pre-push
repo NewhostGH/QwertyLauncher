@@ -1,0 +1,54 @@
+#!/bin/sh
+# Checks what's about to be pushed against the rules in CONTRIBUTING.md:
+# main is never rewritten or deleted, branch names follow the rules, and every new
+# commit's message passes commit-msg (so `git commit --no-verify` can't sneak one in).
+#   pre-push <remote> <url>, with "<local ref> <local sha> <remote ref> <remote sha>" lines on stdin.
+
+hooks="$(git rev-parse --show-toplevel)/.githooks"
+zero=0000000000000000000000000000000000000000
+status=0
+
+fail() {
+    echo "pre-push: $1" >&2
+    status=1
+}
+
+msgfile=$(mktemp) || exit 1
+trap 'rm -f "$msgfile"' EXIT
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+    branch=${remote_ref#refs/heads/}
+    [ "$branch" = "$remote_ref" ] && continue   # tags and other refs: no rules
+
+    if [ "$local_sha" = "$zero" ]; then
+        [ "$branch" = main ] && fail "main can't be deleted"
+        continue
+    fi
+
+    sh "$hooks/branch-name" "$branch" || status=1
+
+    if [ "$branch" = main ] && [ "$remote_sha" != "$zero" ] &&
+        ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
+        fail "this would rewrite main's history (a force push). main only moves forward."
+    fi
+
+    # The commits the remote doesn't have yet.
+    if [ "$remote_sha" = "$zero" ]; then
+        range="$local_sha --not --remotes"
+    else
+        range="$remote_sha..$local_sha"
+    fi
+    for c in $(git rev-list $range); do
+        git log -1 --format=%B "$c" > "$msgfile"
+        sh "$hooks/commit-msg" "$msgfile" 2>/dev/null ||
+            fail "commit $(git log -1 --format='%h %s' "$c") breaks the message rules; fix it with git rebase -i"
+    done
+done
+
+# Optional, where Gradle runs (Code On The Go's terminal): git config qwerty.pushTests true
+if [ $status -eq 0 ] && [ "$(git config --bool qwerty.pushTests)" = true ]; then
+    echo "pre-push: running the unit tests first (turn off with: git config qwerty.pushTests false)" >&2
+    sh "$(git rev-parse --show-toplevel)/build.sh" test || fail "the unit tests failed"
+fi
+
+exit $status

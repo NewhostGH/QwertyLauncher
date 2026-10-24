@@ -1,0 +1,8 @@
+{
+  "id": "todo",
+  "name": "todo",
+  "version": 1,
+  "api": 1,
+  "entry": "com.newhost.qwertylauncher.feature.todo.TodoModule",
+  "permissions": []
+}

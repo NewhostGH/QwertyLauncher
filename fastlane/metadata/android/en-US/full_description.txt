@@ -1,0 +1,23 @@
+<p>QwertyLauncher is a home screen that looks and works like a retro terminal: text on a strict character grid, pictures drawn in coloured ASCII, and everything reachable from the keyboard. It is made for phones with a hardware keyboard, such as the Unihertz Titan, but works with touch too.</p>
+
+<p><b>Type to do anything</b></p>
+<ul>
+<li>Start typing on home to search apps, contacts, app shortcuts and files, or run a command</li>
+<li>A calculator with live results, timers, alarms, a torch, web search and more, as commands</li>
+<li>Arrow keys, the keyboard's touchpad and a mouse step between tiles; your finger scrolls the screen</li>
+</ul>
+
+<p><b>Tiles on home</b></p>
+<ul>
+<li>Clock with world clocks, next alarm, weather with a rain warning, sun and moon, calendar agenda</li>
+<li>Favourites and smart app suggestions, with every icon redrawn in ASCII art</li>
+<li>Notifications with reply, music controls, battery, system, network, sensors, news and a todo list</li>
+<li>Snake, tetris and 2048, playable on the keyboard or by touch</li>
+<li>Sir Alex of Quertia, a small herald and hedge knight who wanders your home screen</li>
+</ul>
+
+<p><b>Modules</b></p>
+<p>Every feature is a module that can be switched off, and modules can be added from a zip file with the <tt>module import</tt> command. An imported module runs with the launcher's permissions, so only install modules you trust.</p>
+
+<p><b>Privacy</b></p>
+<p>No ads and no tracking. Weather comes from Open-Meteo, with your position rounded before it is sent. The optional AI assistant is off until you set it up; it can use a self-hosted Ollama server or a cloud service of your choice (Anthropic, OpenAI, Google Gemini or OpenRouter), which are non-free network services.</p>

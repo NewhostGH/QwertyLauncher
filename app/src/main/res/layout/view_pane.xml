@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A full-screen TUI pane inside home (config, help): title line, list with a cursor, status bar, key help.
+     Framed per the "pane frames" setting; framed, the title goes into the frame's top line. -->
+<com.newhost.qwertylauncher.ui.TileFrame xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:focusable="false">
+
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/title"
+        style="@style/TtyText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/tty_accent" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/list"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:descendantFocusability="blocksDescendants"
+        android:focusable="false"
+        android:scrollbars="none" />
+
+    <!-- A module pane's input line, when it has one (a chat's message box): a prompt, then the text. -->
+    <LinearLayout
+        android:id="@+id/inputRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:baselineAligned="false"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/inputLabel"
+            style="@style/TtyText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/pane_input_prompt"
+            android:textColor="@color/tty_accent" />
+
+        <com.newhost.qwertylauncher.ui.PromptInput
+            android:id="@+id/input"
+            style="@style/TtyText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@null"
+            android:imeOptions="actionSend|flagNoExtractUi"
+            android:importantForAutofill="no"
+            android:inputType="textMultiLine|textNoSuggestions"
+            android:maxLines="4"
+            android:padding="0dp"
+            android:textColorHint="@color/tty_dim" />
+    </LinearLayout>
+
+    <!-- Status bar: where the cursor is and what the row under it does. -->
+    <TextView
+        android:id="@+id/status"
+        style="@style/TtyText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/tty_sel"
+        android:minLines="2" />
+
+    <TextView
+        android:id="@+id/keys"
+        style="@style/TtyText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/tty_dim" />
+</LinearLayout>
+</com.newhost.qwertylauncher.ui.TileFrame>

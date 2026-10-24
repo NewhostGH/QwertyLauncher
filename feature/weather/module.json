@@ -1,0 +1,11 @@
+{
+  "id": "weather",
+  "name": "weather",
+  "version": 1,
+  "api": 1,
+  "entry": "com.newhost.qwertylauncher.feature.weather.WeatherModule",
+  "permissions": [
+    "android.permission.INTERNET",
+    "android.permission.ACCESS_COARSE_LOCATION"
+  ]
+}

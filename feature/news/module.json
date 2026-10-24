@@ -1,0 +1,10 @@
+{
+  "id": "news",
+  "name": "news",
+  "version": 1,
+  "api": 1,
+  "entry": "com.newhost.qwertylauncher.feature.news.NewsModule",
+  "permissions": [
+    "android.permission.INTERNET"
+  ]
+}

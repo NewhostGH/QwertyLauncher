@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">QwertyLauncher</string>
+    <string name="prompt_hint">type a command or search</string>
+    <string name="config_button">launcher settings</string>
+    <string name="config_fallback">[cfg]</string>
+    <string name="help_button">help</string>
+    <string name="help_fallback">[?]</string>
+    <string name="settings_title">~$ config</string>
+    <string name="settings_help">↑↓ move  ⏎ open/edit  ←→ change  space module on/off  / search  esc back</string>
+    <string name="help_title">~$ help</string>
+    <string name="pane_title">~$ %1$s</string>
+    <string name="pane_input_prompt">&gt;\u0020</string>
+    <string name="help_keys">↑↓ move  ⏎ type the command  tab next section  q back</string>
+</resources>

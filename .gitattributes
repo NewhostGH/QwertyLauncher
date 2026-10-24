@@ -1,0 +1,8 @@
+# Line endings: LF in the repo and on checkout (the hooks and gradlew are shell scripts).
+* text=auto eol=lf
+*.bat eol=crlf
+
+*.jar binary
+*.png binary
+*.ttf binary
+*.keystore binary
