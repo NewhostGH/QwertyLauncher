@@ -1,28 +1,33 @@
-# Draft for fdroiddata (metadata/com.newhost.qwertylauncher.yml). Copy it there for the merge
-# request; replace `commit` with the release tag's commit hash.
+# The metadata submitted to fdroiddata (metadata/com.newhost.qwertylauncher.yml), in
+# https://gitlab.com/fdroid/fdroiddata/-/merge_requests/54217. Keep the two in step.
 AntiFeatures:
   NonFreeNet:
     en-US: The optional AI assistant can use Anthropic, OpenAI, Google Gemini or OpenRouter,
       which are non-free network services. It is off until set up, and a self-hosted Ollama
       server works instead.
 Categories:
-  - Theming
+  - Launcher
 License: GPL-3.0-or-later
+AuthorName: NewhostGH
 SourceCode: https://github.com/NewhostGH/QwertyLauncher
 IssueTracker: https://github.com/NewhostGH/QwertyLauncher/issues
+Changelog: https://github.com/NewhostGH/QwertyLauncher/blob/HEAD/CHANGELOG.md
 
 AutoName: QwertyLauncher
 
 RepoType: git
 Repo: https://github.com/NewhostGH/QwertyLauncher.git
+Binaries: https://github.com/NewhostGH/QwertyLauncher/releases/download/v%v/QwertyLauncher-%v.apk
 
 Builds:
   - versionName: '1.0'
     versionCode: 1
-    commit: v1.0
+    commit: 41e27094b1f985784d22313c383cbe8c5efdea02
     subdir: app
     gradle:
       - yes
+
+AllowedAPKSigningKeys: 022cbe29f956c078b5474a07c54daf0bc52bcb98e45015bf72aaff91e1fe8a58
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
