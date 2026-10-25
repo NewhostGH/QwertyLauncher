@@ -1,3 +1,5 @@
+<img src="fastlane/metadata/android/en-US/images/icon.png" alt="QwertyLauncher icon" width="96" align="right">
+
 # QwertyLauncher
 
 A terminal-style Android home screen made for phones with a physical QWERTY keyboard
@@ -9,6 +11,11 @@ and everything reachable from the keyboard.
   music, battery, system, network, sensors, news, todo, games
 - Sir Alex of Quertia, a herald who lives on your home screen
 - Optional AI assistant: self-hosted Ollama, or Anthropic, OpenAI, Gemini or OpenRouter
+
+<p>
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" alt="Home screen with its tiles" width="320">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/2.png" alt="The config pane" width="320">
+</p>
 
 ## Modules
 
