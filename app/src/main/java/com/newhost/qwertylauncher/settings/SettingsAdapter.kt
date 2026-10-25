@@ -209,8 +209,26 @@ internal class SettingsAdapter(
                 is SettingsRow.Section -> section(row, atCursor)
             }
             // To a screen reader: the row's words, without the marker or drawing; headers as headings.
-            view.contentDescription = Speech.row(view.text)
+            // A setting is its name, and its value as its state, which is said again whenever it changes.
+            if (row is SettingsRow.Item) {
+                view.contentDescription = Speech.speakable(row.setting.title + if (row.isSwitch) ", module" else "")
+                ViewCompat.setStateDescription(view, Speech.speakable(value(row.setting, editing)))
+            } else {
+                view.contentDescription = Speech.row(view.text)
+                ViewCompat.setStateDescription(view, null)
+            }
             ViewCompat.setAccessibilityHeading(view, row is SettingsRow.Header)
+        }
+
+        /** A setting's value in words: the one being edited, if it is, else the stored one. */
+        private fun value(setting: Setting<*>, edit: SettingEdit?): String = when {
+            edit == null -> SettingValues.label(store, setting)
+            setting is NumberSetting -> {
+                val unit = if (setting.unit.isEmpty()) "" else " ${setting.unit}"
+                (edit.typed.ifEmpty { edit.draft.toString() }) + unit
+            }
+            setting is ChoiceSetting -> setting.options.firstOrNull { it.value == edit.draft }?.label ?: edit.draft.toString()
+            else -> SettingValues.label(store, setting)
         }
 
         /**
