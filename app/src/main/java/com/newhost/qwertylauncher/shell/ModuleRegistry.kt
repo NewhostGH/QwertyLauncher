@@ -133,7 +133,7 @@ class ModuleRegistry(
         HelpCommand { commands },
         ClearCommand(),
         DebugCommand(DebugPane(context.applicationContext, launcherLog)),
-        ModuleCommand(loader),
+        ModuleCommand(loader) { settings[ShellSettings.unsignedModules] },
         ConfigCommand(SettingsTransfer(context.applicationContext, settings)),
     )
     private val shellProviders = listOf(CommandSearchProvider { commands })
@@ -157,6 +157,7 @@ class ModuleRegistry(
             SettingsSection("$GENERAL.text", "text and prompt", null, ShellSettings.textAndPrompt, group = LAUNCHER),
             SettingsSection("$GENERAL.frames", "frames", null, ShellSettings.frames, group = LAUNCHER),
             SettingsSection("$GENERAL.bar", "top bar and start", null, ShellSettings.barAndStart, group = LAUNCHER),
+            SettingsSection("$GENERAL.modules", "modules", null, ShellSettings.modules, group = LAUNCHER),
         ) + installed
             .map { c ->
                 val tiles = (c.widgets.map { it.id } + c.panels.map { it.id }).flatMap { tileSettings.getValue(it).all }

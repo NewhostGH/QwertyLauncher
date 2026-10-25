@@ -19,7 +19,11 @@ import kotlinx.coroutines.withContext
  * restarts the launcher, which is when modules load. `module crash <id>`
  * (unlisted) crashes the launcher as if that module had, to try the safe mode.
  */
-internal class ModuleCommand(private val loader: ModuleLoader) : Command {
+internal class ModuleCommand(
+    private val loader: ModuleLoader,
+    /** Whether config allows installing modules nobody signed. */
+    private val allowUnsigned: () -> Boolean,
+) : Command {
     override val name = "module"
     override val aliases = listOf("modules")
     override val usage = "module [import|remove <id>|restart]"
@@ -119,6 +123,9 @@ internal class ModuleCommand(private val loader: ModuleLoader) : Command {
         val m = p.manifest
         host.console.println("${m.name} ${m.version}  (${m.id}, api ${m.api}${if (p.imported) ", imported" else ""})")
         host.console.println("  ${m.entry}")
+        if (p.imported) {
+            host.console.println(p.signer?.let { "  signed with key ${ModuleSignature.short(it)}" } ?: "  not signed")
+        }
         if (m.permissions.isNotEmpty()) host.console.println("  uses ${m.permissions.joinToString { it.substringAfterLast('.') }}")
         if (p.missingPermissions.isNotEmpty()) {
             host.console.println("  the launcher lacks ${p.missingPermissions.joinToString { it.substringAfterLast('.') }}: that part won't work")
@@ -144,15 +151,40 @@ internal class ModuleCommand(private val loader: ModuleLoader) : Command {
                     return@launch
                 }
                 val m = incoming.manifest
+                val key = incoming.signer?.let { ModuleSignature.short(it) }
+                val signature = when (incoming.trust) {
+                    ModuleLoader.Trust.LAUNCHER_KEY -> "Signed with the launcher's own key."
+                    ModuleLoader.Trust.SAME_KEY -> "Signed with the same key as the version you have."
+                    ModuleLoader.Trust.NEW_KEY ->
+                        "Signed with a key the launcher doesn't know: $key. Install it only if you know whose key that is."
+                    ModuleLoader.Trust.CHANGED_KEY ->
+                        "Careful: it's signed with a different key than the version you have " +
+                            "(${incoming.previousSigner?.let { ModuleSignature.short(it) }} before, $key now), so someone else may have made it."
+                    ModuleLoader.Trust.UNSIGNED -> {
+                        if (!allowUnsigned()) {
+                            host.console.println(
+                                "module import: ${m.name} isn't signed, so nothing shows who made it or that it wasn't changed. " +
+                                    "Sign it as you build it (gradlew :feature:${m.id}:signModule). To install unsigned " +
+                                    "modules anyway, turn on allow unsigned modules in config, under modules.",
+                            )
+                            return@launch
+                        }
+                        "It isn't signed: nothing shows who made it or that it wasn't changed."
+                    }
+                }
                 val lacks = incoming.missingPermissions.takeIf { it.isNotEmpty() }
                     ?.let { " It uses ${it.joinToString { perm -> perm.substringAfterLast('.') }}, which the launcher lacks." }
                     .orEmpty()
                 val replacing = loader.packages.firstOrNull { it.manifest.id == m.id }?.let { " Replaces ${it.manifest.name} ${it.manifest.version}." }.orEmpty()
-                host.console.println("module import: ${m.name} ${m.version} (${m.id}). It runs as the launcher, with all its permissions: only install modules you trust.$replacing$lacks")
+                host.console.println(
+                    "module import: ${m.name} ${m.version} (${m.id}). $signature " +
+                        "It runs as the launcher, with all its permissions: only install modules you trust.$replacing$lacks",
+                )
+                val installLabel = if (incoming.trust == ModuleLoader.Trust.CHANGED_KEY) "install anyway and restart" else "install and restart"
                 host.showMenu(
                     "install ${m.name}?",
                     listOf(
-                        MenuItem("install and restart") { h -> install(h, incoming) },
+                        MenuItem(installLabel) { h -> install(h, incoming) },
                         MenuItem("cancel") { h -> h.console.println("module import: cancelled") },
                     ),
                 )

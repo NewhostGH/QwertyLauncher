@@ -75,6 +75,8 @@ class ModulePackage(
     val held: Boolean = false,
     /** Not loaded on purpose (held back, or safe mode), rather than failing to: [problem] says why. */
     val skipped: Boolean = false,
+    /** For an imported one, the [ModuleSignature] fingerprint of the key it was signed with when installed; null if unsigned. */
+    val signer: String? = null,
 )
 
 /**
@@ -91,6 +93,8 @@ class ModuleLoader(private val context: Context, private val log: DebugLog, priv
     private val root = File(context.filesDir, "modules")
     private val bundledDir = File(root, "bundled")
     private val importedDir = File(root, "imported")
+    /** Each imported module's signing key, as "id fingerprint" lines, noted when it's installed. */
+    private val signersFile = File(root, "signers")
 
     /** What [load] found, bundled first in their order, then the imported ones. */
     var packages: List<ModulePackage> = emptyList()
@@ -167,8 +171,9 @@ class ModuleLoader(private val context: Context, private val log: DebugLog, priv
         }
         val missing = manifest.permissions.filter { it !in declared }
         val isHeld = manifest.id in held
+        val signer = if (imported) signers()[manifest.id] else null
         fun result(module: LauncherModule?, problem: String?, skipped: Boolean = false) =
-            ModulePackage(manifest, file, imported, replaces, module, problem, missing, isHeld, skipped)
+            ModulePackage(manifest, file, imported, replaces, module, problem, missing, isHeld, skipped, signer)
         if (isHeld) return result(null, "held back: it kept crashing the launcher", skipped = true)
         if (skip != null) return result(null, skip, skipped = true)
         if (manifest.api > ModuleApi.VERSION) {
@@ -224,8 +229,30 @@ class ModuleLoader(private val context: Context, private val log: DebugLog, priv
         context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_PERMISSIONS)
             .requestedPermissions.orEmpty().toSet()
 
+    /** How far an imported module's signature can be trusted; see [ModuleSignature]. */
+    enum class Trust {
+        /** Signed with the key the launcher itself is signed with. */
+        LAUNCHER_KEY,
+        /** Signed with the same key as the version of it installed now. */
+        SAME_KEY,
+        /** Signed with a key the launcher hasn't seen for this module. */
+        NEW_KEY,
+        /** Signed with a different key than the version installed now: maybe someone else's. */
+        CHANGED_KEY,
+        UNSIGNED,
+    }
+
     /** A zip picked to import, checked but not installed yet. */
-    class Incoming(val manifest: ModuleManifest, internal val file: File, val missingPermissions: List<String>)
+    class Incoming(
+        val manifest: ModuleManifest,
+        internal val file: File,
+        val missingPermissions: List<String>,
+        /** The [ModuleSignature] fingerprint of its key; null if unsigned. */
+        val signer: String?,
+        val trust: Trust,
+        /** The key the installed version was signed with, if it's imported and was signed. */
+        val previousSigner: String?,
+    )
 
     /** Copies the zip at [uri] in and checks it; throws [IOException] saying what's wrong with it. Not on the main thread. */
     fun inspect(uri: Uri): Incoming {
@@ -244,8 +271,42 @@ class ModuleLoader(private val context: Context, private val log: DebugLog, priv
             file.delete()
             throw IOException("it needs a newer launcher (module api ${manifest.api}, this is ${ModuleApi.VERSION})")
         }
-        return Incoming(manifest, file, manifest.permissions.filter { it !in declaredPermissions() })
+        val signer = try {
+            ModuleSignature.signer(file)
+        } catch (e: IOException) {
+            file.delete()
+            throw e
+        }
+        val previous = signers()[manifest.id]
+        val trust = when {
+            signer == null -> Trust.UNSIGNED
+            signer in launcherSigners() -> Trust.LAUNCHER_KEY
+            previous == signer -> Trust.SAME_KEY
+            previous != null -> Trust.CHANGED_KEY
+            else -> Trust.NEW_KEY
+        }
+        return Incoming(manifest, file, manifest.permissions.filter { it !in declaredPermissions() }, signer, trust, previous)
     }
+
+    /** The fingerprints of the keys the launcher's own APK is signed with. */
+    private fun launcherSigners(): Set<String> =
+        context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES)
+            .signingInfo?.apkContentsSigners.orEmpty()
+            .map { ModuleSignature.fingerprint(it.toByteArray()) }.toSet()
+
+    private fun signers(): Map<String, String> =
+        try {
+            if (signersFile.exists()) {
+                signersFile.readLines().mapNotNull { line -> line.trim().split(' ').takeIf { it.size == 2 }?.let { it[0] to it[1] } }.toMap()
+            } else {
+                emptyMap()
+            }
+        } catch (e: IOException) {
+            emptyMap()
+        }
+
+    private fun saveSigners(signers: Map<String, String>) =
+        signersFile.writeText(signers.entries.joinToString("") { (id, key) -> "$id $key\n" })
 
     /** Installs [incoming], replacing an imported one with its id. Takes a restart to load. */
     fun install(incoming: Incoming) {
@@ -254,11 +315,18 @@ class ModuleLoader(private val context: Context, private val log: DebugLog, priv
         target.delete()
         if (!incoming.file.renameTo(target)) throw IOException("couldn't keep it")
         target.setReadOnly()
+        val signers = signers() - incoming.manifest.id
+        saveSigners(incoming.signer?.let { signers + (incoming.manifest.id to it) } ?: signers)
         log.d("imported module ${incoming.manifest.id} ${incoming.manifest.version}")
     }
 
     /** Removes the imported module [id]; a bundled one it stood in for comes back. Takes a restart. */
-    fun remove(id: String): Boolean = File(importedDir, id + EXTENSION).delete().also { if (it) log.d("removed module $id") }
+    fun remove(id: String): Boolean = File(importedDir, id + EXTENSION).delete().also {
+        if (it) {
+            saveSigners(signers() - id)
+            log.d("removed module $id")
+        }
+    }
 
     private companion object {
         const val ASSETS = "modules"

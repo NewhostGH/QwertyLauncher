@@ -99,12 +99,21 @@ internal object ShellSettings {
         summary = "Shows the phone's own status bar above the terminal.",
     )
 
-    // In config, three sections of their own (they're all stored as general's).
+    val unsignedModules = ToggleSetting(
+        "unsigned_modules",
+        "allow unsigned modules",
+        default = false,
+        summary = "Lets module import install a module nobody signed. Nothing then shows who made it or that it " +
+            "wasn't changed, and it runs with all the launcher's permissions. Only for modules you built yourself.",
+    )
+
+    // In config, sections of their own (they're all stored as general's).
     val textAndPrompt = listOf(font, fontSize, prompt, cursorBlink)
     val frames = listOf(tileFrame, frameLines, frameColor, paneFrames, buttonFrames)
     val barAndStart = listOf(buttonSize, statusBar, bootBanner)
+    val modules = listOf(unsignedModules)
 
-    val all = (textAndPrompt + frames + barAndStart).toTypedArray()
+    val all = (textAndPrompt + frames + barAndStart + modules).toTypedArray()
 
     /** Settings that change how home is built, so it's rebuilt when they change. */
     val layoutAffecting = listOf(font, fontSize, buttonSize, tileFrame, frameLines, frameColor, paneFrames, buttonFrames)
