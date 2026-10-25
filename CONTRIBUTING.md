@@ -62,7 +62,8 @@ looks like an API key or token.
 GitHub Actions builds every push (`.github/workflows/ci.yml`: unit tests, a debug APK, lint).
 A version tag publishes a release (`.github/workflows/release.yml`):
 
-1. Raise `versionCode` and `versionName` in `app/build.gradle.kts`, and write
+1. Raise `versionCode` and `versionName` in `app/build.gradle.kts`, move `[Unreleased]` in
+   `CHANGELOG.md` under the new version, and write
    `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`.
 2. Join it to `main`, then tag that commit `v<versionName>` and push the tag:
 
