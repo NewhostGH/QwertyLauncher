@@ -111,15 +111,15 @@ internal class HelpScreen(
         val KEYS = listOf(
             "home" to listOf(
                 "any key" to "opens the prompt and starts a search",
-                "scroll, ←↑↓→" to "move through the tiles, their controls (like music's) and favourites; a slide on the keyboard does the same",
-                "finger" to "drags the screen itself up and down; swipes a grid of apps to its next page",
+                "scroll, ←↑↓→" to "move through tiles, controls and favourites",
+                "finger" to "scrolls; swipes app pages",
                 "⏎ space" to "open what is selected",
-                "hold ⏎" to "on a tile: move, resize or hide it (hiding turns its module off); on the question mark or wrench: move help and config along the top, as one",
+                "hold ⏎" to "move, resize or hide a tile; on help or config, move them",
                 "hold ⏎, menu" to "on a favourite: its options",
                 "question mark" to "opens this help",
                 "wrench" to "opens config",
-                "toggles" to "top left: enter switches one; hold enter for its settings, to hide it, or to move the toggles (left, middle or right, beside help and config or apart); tick them in config under quick toggles",
-                "Sir Alex" to "the little knight: tap to poke him, drag to carry him; alex calls him, alex and words talks to him",
+                "toggles" to "enter switches; hold for more",
+                "Sir Alex" to "tap to poke, drag to carry; alex calls him",
                 "esc, back" to "closes the prompt, then clears the console",
             ),
             "editing a value in config" to listOf(
@@ -131,7 +131,7 @@ internal class HelpScreen(
             ),
             "resizing a tile" to listOf(
                 "←→ h l" to "narrower, wider, a column at a time",
-                "↑↓ k j" to "shorter, taller, by one line; favourites and suggestions jump between their row heights (5 to 7 lines a row, 10 to 14 for two...)",
+                "↑↓ k j" to "shorter, taller",
                 "shift" to "five at a time",
                 "scroll" to "sideways for width, up and down for height",
                 "0 or a" to "automatic size",
@@ -155,13 +155,13 @@ internal class HelpScreen(
             "games (play)" to listOf(
                 "←↑↓→ wasd" to "move, steer, slide; in tetris w turns and s drops faster",
                 "space ⏎ x" to "tetris: drop; after game over: play again",
-                "swipe, tap" to "the same by touch; tetris follows a drag, a flick down drops, a tap turns",
+                "swipe, tap" to "the same by touch",
                 "p, r" to "pause, start again",
                 "esc, back" to "leave: the game waits, paused",
             ),
             "ai conversation" to listOf(
                 "type ⏎" to "sends a message",
-                "> do: ..." to "something the AI offers to do on the phone: enter on it runs it, nothing runs until then",
+                "> do: ..." to "an action the AI offers; enter runs it",
                 "^c ^n" to "stop an answer, start a new conversation",
             ),
             "panes" to listOf(

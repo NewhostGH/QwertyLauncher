@@ -153,23 +153,21 @@ internal class ModuleCommand(
                 val m = incoming.manifest
                 val key = incoming.signer?.let { ModuleSignature.short(it) }
                 val signature = when (incoming.trust) {
-                    ModuleLoader.Trust.LAUNCHER_KEY -> "Signed with the launcher's own key."
-                    ModuleLoader.Trust.SAME_KEY -> "Signed with the same key as the version you have."
+                    ModuleLoader.Trust.LAUNCHER_KEY -> "Signed with the launcher's key."
+                    ModuleLoader.Trust.SAME_KEY -> "Signed with the same key as before."
                     ModuleLoader.Trust.NEW_KEY ->
-                        "Signed with a key the launcher doesn't know: $key. Install it only if you know whose key that is."
+                        "Signed with an unknown key: $key."
                     ModuleLoader.Trust.CHANGED_KEY ->
-                        "Careful: it's signed with a different key than the version you have " +
-                            "(${incoming.previousSigner?.let { ModuleSignature.short(it) }} before, $key now), so someone else may have made it."
+                        "Careful: signed with a different key than before " +
+                            "(${incoming.previousSigner?.let { ModuleSignature.short(it) }} then $key)."
                     ModuleLoader.Trust.UNSIGNED -> {
                         if (!allowUnsigned()) {
                             host.console.println(
-                                "module import: ${m.name} isn't signed, so nothing shows who made it or that it wasn't changed. " +
-                                    "Sign it as you build it (gradlew :feature:${m.id}:signModule). To install unsigned " +
-                                    "modules anyway, turn on allow unsigned modules in config, under modules.",
+                                "module import: ${m.name} isn't signed. Allow it in config, under modules.",
                             )
                             return@launch
                         }
-                        "It isn't signed: nothing shows who made it or that it wasn't changed."
+                        "It isn't signed."
                     }
                 }
                 val lacks = incoming.missingPermissions.takeIf { it.isNotEmpty() }
@@ -178,7 +176,7 @@ internal class ModuleCommand(
                 val replacing = loader.packages.firstOrNull { it.manifest.id == m.id }?.let { " Replaces ${it.manifest.name} ${it.manifest.version}." }.orEmpty()
                 host.console.println(
                     "module import: ${m.name} ${m.version} (${m.id}). $signature " +
-                        "It runs as the launcher, with all its permissions: only install modules you trust.$replacing$lacks",
+                        "Runs with all the launcher's permissions.$replacing$lacks",
                 )
                 val installLabel = if (incoming.trust == ModuleLoader.Trust.CHANGED_KEY) "install anyway and restart" else "install and restart"
                 host.showMenu(

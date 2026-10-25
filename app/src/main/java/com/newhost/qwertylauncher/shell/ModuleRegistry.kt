@@ -313,8 +313,7 @@ class ModuleRegistry(
             "enabled",
             "${module.title} module on",
             default = true,
-            summary = "Off turns all of ${module.title} off: its tiles, commands, search and anything it offers. " +
-                "To hide just a tile, use its own switch under tile.",
+            summary = "Off turns off its tiles, commands and search.",
         )
         private val declared = mutableListOf<Setting<*>>()
         private val contributions = Contributions(SettingsSection(module.id, module.title, enabled, declared))

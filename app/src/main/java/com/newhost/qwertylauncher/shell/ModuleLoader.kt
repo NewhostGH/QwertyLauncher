@@ -140,12 +140,12 @@ class ModuleLoader(private val context: Context, private val log: DebugLog, priv
         }
         safeNotice = when {
             newlyHeld.isNotEmpty() ->
-                "Safe mode: ${newlyHeld.joinToString(" and ")} kept crashing the launcher, so it is held back. " +
-                    "Type module and hold enter on it to let it load again."
+                "Safe mode: ${newlyHeld.joinToString(" and ")} kept crashing, so it's held back. " +
+                    "Hold enter on it under module to let it load."
             mode == CrashGuard.Mode.NO_MODULES ->
-                "Safe mode: the launcher kept crashing, so this start loads no modules. Type module restart to try again."
+                "Safe mode: no modules this start. Type module restart to retry."
             mode == CrashGuard.Mode.NO_IMPORTED ->
-                "Safe mode: the launcher kept crashing, so this start leaves out imported modules. Type module restart to try again."
+                "Safe mode: no imported modules this start. Type module restart to retry."
             else -> null
         }
         safeNotice?.let { log.d(it) }
