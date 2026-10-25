@@ -1,19 +1,24 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
-   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Backup and phone-to-phone transfer keep settings only: with an <include>, nothing else goes.
+  Not the modules (bundled ones come with the app, imported ones are code to re-import on purpose),
+  the debug log, the crash guard's records, AI keys (sealed by this phone's keystore: useless on
+  another), or what modules collect as they're used (chats, todo, favourites, history, caches).
 -->
 <data-extraction-rules>
-  <cloud-backup>
-    <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
-  </cloud-backup>
-  <!--
+    <cloud-backup>
+        <!-- Config's settings. -->
+        <include domain="file" path="datastore/launcher_settings.preferences_pb" />
+        <!-- The tiles' order, and the top bar's arrangement. -->
+        <include domain="sharedpref" path="tiles.xml" />
+        <include domain="sharedpref" path="top_bar.xml" />
+        <!-- The AI's model and server address for each provider (its keys are in ai_keys.xml). -->
+        <include domain="sharedpref" path="ai.xml" />
+    </cloud-backup>
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <include domain="file" path="datastore/launcher_settings.preferences_pb" />
+        <include domain="sharedpref" path="tiles.xml" />
+        <include domain="sharedpref" path="top_bar.xml" />
+        <include domain="sharedpref" path="ai.xml" />
     </device-transfer>
-    -->
 </data-extraction-rules>

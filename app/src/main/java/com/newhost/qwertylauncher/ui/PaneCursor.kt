@@ -26,6 +26,11 @@ internal class PaneCursor(
 ) {
     val position: Int get() = state.cursor
 
+    /** A screen reader choosing a row takes the cursor there, so a double tap opens that row. */
+    private val reader = ReaderCursor(list) { position ->
+        if (position != state.cursor && position in 0 until rowCount() && !isHeader(position)) moveTo(position)
+    }
+
     init {
         list.layoutManager = LinearLayoutManager(list.context)
         list.terminalStyle()
@@ -95,6 +100,7 @@ internal class PaneCursor(
         state.cursor = index
         if (!showTallRow(index, fromBelow)) keepVisible(index)
         onMoved(index)
+        reader.follow(index)
     }
 
     /**

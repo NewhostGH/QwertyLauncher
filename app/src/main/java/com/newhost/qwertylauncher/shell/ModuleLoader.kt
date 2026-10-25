@@ -9,6 +9,7 @@ import com.newhost.qwertylauncher.core.ModuleApi
 import dalvik.system.DexClassLoader
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
 import java.util.zip.ZipFile
 import org.json.JSONException
 import org.json.JSONObject
@@ -70,6 +71,12 @@ class ModulePackage(
     val problem: String?,
     /** Permissions it uses that the launcher doesn't declare: what needs them won't work. */
     val missingPermissions: List<String>,
+    /** Held back by [CrashGuard] after crashing the launcher: the user can let it load again. */
+    val held: Boolean = false,
+    /** Not loaded on purpose (held back, or safe mode), rather than failing to: [problem] says why. */
+    val skipped: Boolean = false,
+    /** For an imported one, the [ModuleSignature] fingerprint of the key it was signed with when installed; null if unsigned. */
+    val signer: String? = null,
 )
 
 /**
@@ -82,14 +89,28 @@ class ModulePackage(
  * one's id takes its place. Loading happens once, at process start: a
  * change takes a restart.
  */
-class ModuleLoader(private val context: Context, private val log: DebugLog) {
+class ModuleLoader(private val context: Context, private val log: DebugLog, private val guard: CrashGuard) {
     private val root = File(context.filesDir, "modules")
     private val bundledDir = File(root, "bundled")
     private val importedDir = File(root, "imported")
+    /** Each imported module's signing key, as "id fingerprint" lines, noted when it's installed. */
+    private val signersFile = File(root, "signers")
 
     /** What [load] found, bundled first in their order, then the imported ones. */
     var packages: List<ModulePackage> = emptyList()
         private set
+
+    /** What [CrashGuard] said this start, for home to tell the user once; null when all went normally. */
+    private var safeNotice: String? = null
+
+    /** The safe mode notice, the first time it's asked for. */
+    fun takeSafeNotice(): String? = safeNotice.also { safeNotice = null }
+
+    /** Each opened module's code package to its id, for blaming a crash; filled in as modules open. */
+    private val codePackages = ConcurrentHashMap<String, String>()
+
+    /** The module to blame for [error], if its code was running; see [CrashGuard.blame]. */
+    fun blame(error: Throwable): String? = CrashGuard.blame(error, codePackages, context.packageName)
 
     /** Loads every installed module; one that can't load is kept in [packages] with its problem, and skipped. */
     fun load(): List<LauncherModule> {
@@ -106,14 +127,42 @@ class ModuleLoader(private val context: Context, private val log: DebugLog) {
         val files = bundled.map { b -> importedIds[b.name.removeSuffix(EXTENSION)]?.let { it to true } ?: (b to false) } +
             imported.filter { it.name.removeSuffix(EXTENSION) !in bundledIds }.map { it to true }
         val declared = declaredPermissions()
+        val (mode, newlyHeld) = guard.start()
+        val held = guard.held
         packages = files.mapNotNull { (file, isImported) ->
             val replaces = isImported && file.name.removeSuffix(EXTENSION) in bundledIds
-            open(file, isImported, replaces, declared)
+            val skip = when {
+                mode == CrashGuard.Mode.NO_MODULES -> "off for this start: the launcher kept crashing"
+                mode == CrashGuard.Mode.NO_IMPORTED && isImported -> "off for this start: the launcher kept crashing"
+                else -> null
+            }
+            open(file, isImported, replaces, declared, skip, held)
         }
+        safeNotice = when {
+            newlyHeld.isNotEmpty() ->
+                "Safe mode: ${newlyHeld.joinToString(" and ")} kept crashing, so it's held back. " +
+                    "Hold enter on it under module to let it load."
+            mode == CrashGuard.Mode.NO_MODULES ->
+                "Safe mode: no modules this start. Type module restart to retry."
+            mode == CrashGuard.Mode.NO_IMPORTED ->
+                "Safe mode: no imported modules this start. Type module restart to retry."
+            else -> null
+        }
+        safeNotice?.let { log.d(it) }
         return packages.mapNotNull { it.module }
     }
 
-    private fun open(file: File, imported: Boolean, replaces: Boolean, declared: Set<String>): ModulePackage? {
+    /** Lets a module held back after crashing load again; takes a restart. */
+    fun release(id: String): Boolean = guard.release(id).also { if (it) log.d("let $id load again") }
+
+    private fun open(
+        file: File,
+        imported: Boolean,
+        replaces: Boolean,
+        declared: Set<String>,
+        skip: String?,
+        held: Set<String>,
+    ): ModulePackage? {
         val manifest = try {
             ModuleManifest.read(file)
         } catch (e: IOException) {
@@ -121,14 +170,19 @@ class ModuleLoader(private val context: Context, private val log: DebugLog) {
             return null
         }
         val missing = manifest.permissions.filter { it !in declared }
-        fun result(module: LauncherModule?, problem: String?) =
-            ModulePackage(manifest, file, imported, replaces, module, problem, missing)
+        val isHeld = manifest.id in held
+        val signer = if (imported) signers()[manifest.id] else null
+        fun result(module: LauncherModule?, problem: String?, skipped: Boolean = false) =
+            ModulePackage(manifest, file, imported, replaces, module, problem, missing, isHeld, skipped, signer)
+        if (isHeld) return result(null, "held back: it kept crashing the launcher", skipped = true)
+        if (skip != null) return result(null, skip, skipped = true)
         if (manifest.api > ModuleApi.VERSION) {
             return result(null, "needs a newer launcher (module api ${manifest.api}, this is ${ModuleApi.VERSION})")
         }
         return try {
             // Android refuses to load code from a file the app could still change.
             file.setReadOnly()
+            codePackages[manifest.entry.substringBeforeLast('.', "")] = manifest.id
             val loader = DexClassLoader(file.path, null, null, ModuleLoader::class.java.classLoader)
             val module = loader.loadClass(manifest.entry).getDeclaredConstructor().newInstance() as LauncherModule
             if (module.id != manifest.id) log.d("module ${manifest.id}: its class says id '${module.id}'")
@@ -175,8 +229,30 @@ class ModuleLoader(private val context: Context, private val log: DebugLog) {
         context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_PERMISSIONS)
             .requestedPermissions.orEmpty().toSet()
 
+    /** How far an imported module's signature can be trusted; see [ModuleSignature]. */
+    enum class Trust {
+        /** Signed with the key the launcher itself is signed with. */
+        LAUNCHER_KEY,
+        /** Signed with the same key as the version of it installed now. */
+        SAME_KEY,
+        /** Signed with a key the launcher hasn't seen for this module. */
+        NEW_KEY,
+        /** Signed with a different key than the version installed now: maybe someone else's. */
+        CHANGED_KEY,
+        UNSIGNED,
+    }
+
     /** A zip picked to import, checked but not installed yet. */
-    class Incoming(val manifest: ModuleManifest, internal val file: File, val missingPermissions: List<String>)
+    class Incoming(
+        val manifest: ModuleManifest,
+        internal val file: File,
+        val missingPermissions: List<String>,
+        /** The [ModuleSignature] fingerprint of its key; null if unsigned. */
+        val signer: String?,
+        val trust: Trust,
+        /** The key the installed version was signed with, if it's imported and was signed. */
+        val previousSigner: String?,
+    )
 
     /** Copies the zip at [uri] in and checks it; throws [IOException] saying what's wrong with it. Not on the main thread. */
     fun inspect(uri: Uri): Incoming {
@@ -195,8 +271,42 @@ class ModuleLoader(private val context: Context, private val log: DebugLog) {
             file.delete()
             throw IOException("it needs a newer launcher (module api ${manifest.api}, this is ${ModuleApi.VERSION})")
         }
-        return Incoming(manifest, file, manifest.permissions.filter { it !in declaredPermissions() })
+        val signer = try {
+            ModuleSignature.signer(file)
+        } catch (e: IOException) {
+            file.delete()
+            throw e
+        }
+        val previous = signers()[manifest.id]
+        val trust = when {
+            signer == null -> Trust.UNSIGNED
+            signer in launcherSigners() -> Trust.LAUNCHER_KEY
+            previous == signer -> Trust.SAME_KEY
+            previous != null -> Trust.CHANGED_KEY
+            else -> Trust.NEW_KEY
+        }
+        return Incoming(manifest, file, manifest.permissions.filter { it !in declaredPermissions() }, signer, trust, previous)
     }
+
+    /** The fingerprints of the keys the launcher's own APK is signed with. */
+    private fun launcherSigners(): Set<String> =
+        context.packageManager.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES)
+            .signingInfo?.apkContentsSigners.orEmpty()
+            .map { ModuleSignature.fingerprint(it.toByteArray()) }.toSet()
+
+    private fun signers(): Map<String, String> =
+        try {
+            if (signersFile.exists()) {
+                signersFile.readLines().mapNotNull { line -> line.trim().split(' ').takeIf { it.size == 2 }?.let { it[0] to it[1] } }.toMap()
+            } else {
+                emptyMap()
+            }
+        } catch (e: IOException) {
+            emptyMap()
+        }
+
+    private fun saveSigners(signers: Map<String, String>) =
+        signersFile.writeText(signers.entries.joinToString("") { (id, key) -> "$id $key\n" })
 
     /** Installs [incoming], replacing an imported one with its id. Takes a restart to load. */
     fun install(incoming: Incoming) {
@@ -205,11 +315,18 @@ class ModuleLoader(private val context: Context, private val log: DebugLog) {
         target.delete()
         if (!incoming.file.renameTo(target)) throw IOException("couldn't keep it")
         target.setReadOnly()
+        val signers = signers() - incoming.manifest.id
+        saveSigners(incoming.signer?.let { signers + (incoming.manifest.id to it) } ?: signers)
         log.d("imported module ${incoming.manifest.id} ${incoming.manifest.version}")
     }
 
     /** Removes the imported module [id]; a bundled one it stood in for comes back. Takes a restart. */
-    fun remove(id: String): Boolean = File(importedDir, id + EXTENSION).delete().also { if (it) log.d("removed module $id") }
+    fun remove(id: String): Boolean = File(importedDir, id + EXTENSION).delete().also {
+        if (it) {
+            saveSigners(signers() - id)
+            log.d("removed module $id")
+        }
+    }
 
     private companion object {
         const val ASSETS = "modules"

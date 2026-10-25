@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A module pane's row: the cursor marker, an optional one-line ASCII-art icon, then the text. -->
+<!-- A module pane's row: the cursor marker, an optional one-line ASCII-art icon, then the text.
+     A screen reader hears only the row's words (set on the row): not the marker or the icon's characters. -->
 <!-- Not baseline-aligned: the icon is tiny text whose baseline sits near its top, and lining it up
      with the text's baseline pushed it down, half out of its line. Centred instead. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -12,6 +13,7 @@
     <TextView
         android:id="@+id/marker"
         style="@style/TtyText"
+        android:importantForAccessibility="no"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:maxLines="1" />
@@ -19,6 +21,7 @@
     <com.newhost.qwertylauncher.ui.ArtView
         android:id="@+id/icon"
         style="@style/TtyText"
+        android:importantForAccessibility="no"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="gone" />

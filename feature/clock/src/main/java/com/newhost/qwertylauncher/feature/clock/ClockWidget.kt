@@ -88,7 +88,7 @@ internal class ClockWidget(
                 layout = grid {
                     columns(fr())
                     rows(auto(), fr())
-                    add(Cell.Text(SevenSegment.render(time), wrap = false))
+                    add(Cell.Text(SevenSegment.render(time), wrap = false).apply { spoken = time })
                     flow(facts, FACT_COLUMNS, row = 1, rows = 2, pack = true)
                 },
             )
@@ -97,6 +97,7 @@ internal class ClockWidget(
         val cyan = context.getColor(CoreR.color.tty_cyan)
         // A new minute rolls the digits over.
         val digits = Cell.Art("time:$time", Size(TIME_COLUMNS, TIME_LINES)) { TextDrawable(time, fg, cyan) }
+            .apply { spoken = time }
         return WidgetContent(
             time,
             layout = responsive {

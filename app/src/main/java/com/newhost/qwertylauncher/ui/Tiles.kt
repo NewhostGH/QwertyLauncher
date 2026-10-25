@@ -8,6 +8,8 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.accessibility.AccessibilityNodeInfo
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
 import android.widget.FrameLayout
 import com.newhost.qwertylauncher.core.Pose
 import com.newhost.qwertylauncher.core.Stage
@@ -692,6 +694,12 @@ class TileFrame @JvmOverloads constructor(
             return
         }
         FrameLook.drawBox(canvas, width, height, paint, label)
+    }
+
+    /** The title is drawn in the frame, out of a screen reader's sight: it says the tile's name instead. */
+    override fun onInitializeAccessibilityNodeInfo(info: AccessibilityNodeInfo) {
+        super.onInitializeAccessibilityNodeInfo(info)
+        AccessibilityNodeInfoCompat.wrap(info).roleDescription = if (title.isEmpty()) "tile" else "${Speech.words(title)} tile"
     }
 
     private companion object {

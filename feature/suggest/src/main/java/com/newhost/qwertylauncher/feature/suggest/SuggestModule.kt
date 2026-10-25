@@ -104,7 +104,7 @@ internal object SuggestSettings {
         "learn",
         "suggestions learn from what I open",
         default = true,
-        summary = "Remembers which app you opened when (time, day, sound device, charging, network). Only on the phone.",
+        summary = "Learns when you open which app. Stays on the phone.",
     )
 
     val all = arrayOf(learn)

@@ -18,8 +18,7 @@ internal object ShellSettings {
             Choice(FONT_SYSTEM, "system monospace"),
         ),
         default = FONT_JETBRAINS,
-        summary = "JetBrains Mono and DejaVu have every box and block character at exactly one cell. " +
-            "Plex and the system font borrow a few from other fonts, which can put borders out of line.",
+        summary = "JetBrains Mono and DejaVu keep borders aligned.",
     )
     val fontSize = NumberSetting(
         "font_size",
@@ -51,7 +50,7 @@ internal object ShellSettings {
         "tile frame style",
         listOf(Choice(FRAME_COMPACT, "title line"), Choice(FRAME_FULL, "full box"), Choice(FRAME_NONE, "none")),
         default = FRAME_COMPACT,
-        summary = "A title line above each tile takes the least room, like tmux pane borders. A full box frames it all around.",
+        summary = "Title line takes the least room; box frames the whole tile.",
     )
     val frameLines = ChoiceSetting(
         "frame_lines",
@@ -99,12 +98,20 @@ internal object ShellSettings {
         summary = "Shows the phone's own status bar above the terminal.",
     )
 
-    // In config, three sections of their own (they're all stored as general's).
+    val unsignedModules = ToggleSetting(
+        "unsigned_modules",
+        "allow unsigned modules",
+        default = false,
+        summary = "Install modules nobody signed. Only for ones you built.",
+    )
+
+    // In config, sections of their own (they're all stored as general's).
     val textAndPrompt = listOf(font, fontSize, prompt, cursorBlink)
     val frames = listOf(tileFrame, frameLines, frameColor, paneFrames, buttonFrames)
     val barAndStart = listOf(buttonSize, statusBar, bootBanner)
+    val modules = listOf(unsignedModules)
 
-    val all = (textAndPrompt + frames + barAndStart).toTypedArray()
+    val all = (textAndPrompt + frames + barAndStart + modules).toTypedArray()
 
     /** Settings that change how home is built, so it's rebuilt when they change. */
     val layoutAffecting = listOf(font, fontSize, buttonSize, tileFrame, frameLines, frameColor, paneFrames, buttonFrames)
@@ -141,7 +148,7 @@ internal class TileSettings(id: String, title: String) {
         "${id}_shown",
         "show the $title tile on home",
         default = true,
-        summary = "Off hides just this tile; the module stays on, with its commands and search. Its switch above turns all of it off.",
+        summary = "Off hides the tile; the module stays on.",
     )
     val width = NumberSetting(
         "${id}_width",
@@ -150,7 +157,7 @@ internal class TileSettings(id: String, title: String) {
         min = AUTO,
         max = MAX_COLUMNS,
         unit = "columns",
-        summary = "0 is automatic: the whole row for wide tiles, half of it for the rest. Anything wider than the screen fills it.",
+        summary = "0 is automatic.",
     )
     val height = NumberSetting(
         "${id}_height",
@@ -159,7 +166,7 @@ internal class TileSettings(id: String, title: String) {
         min = AUTO,
         max = MAX_LINES,
         unit = "lines",
-        summary = "0 is automatic: as tall as its content. Tiles side by side share the tallest height.",
+        summary = "0 is automatic: as tall as its content.",
     )
     val all = listOf(shown, width, height)
 

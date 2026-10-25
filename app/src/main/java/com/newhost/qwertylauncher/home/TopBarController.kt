@@ -19,6 +19,7 @@ import com.newhost.qwertylauncher.shell.ShellSettings
 import com.newhost.qwertylauncher.ui.ArtPlayer
 import com.newhost.qwertylauncher.ui.ArtView
 import com.newhost.qwertylauncher.ui.BarStripView
+import com.newhost.qwertylauncher.ui.Speech
 import com.newhost.qwertylauncher.ui.TopBar
 import com.newhost.qwertylauncher.ui.TtyFont
 import com.newhost.qwertylauncher.ui.VimKeys
@@ -46,6 +47,8 @@ internal class TopBarController(private val activity: HomeActivity) {
     private val strips = linkedMapOf<String, BarStripView>()
     private val stripTitles = mutableMapOf<View, String>()
     private val stripSources = mutableMapOf<BarStripView, BarStrip>()
+    /** Each button's label as shown; its content description is the label as said. */
+    private val labels = mutableMapOf<View, String>()
 
     /** The strip in the place [id], if that's a strip's. */
     fun strip(id: String): BarStripView? = strips[id]
@@ -75,7 +78,7 @@ internal class TopBarController(private val activity: HomeActivity) {
                             bindBarButton(strip, button, bar, renderer, players, drawn)
                         }
                         // A button that changed under the cursor says its new state.
-                        view.buttons().firstOrNull { it.isFocused }?.contentDescription?.let { activity.prompt.flash(it) }
+                        view.buttons().firstOrNull { it.isFocused }?.let(labels::get)?.let { activity.prompt.flash(it) }
                     }
             }
         }
@@ -95,7 +98,8 @@ internal class TopBarController(private val activity: HomeActivity) {
     ) {
         button.tag = bar.key
         // Read out by accessibility, never shown: no tooltips on the top bar.
-        button.contentDescription = bar.label
+        labels[button] = bar.label
+        button.contentDescription = Speech.speakable(bar.label)
         button.setOnClickListener { bar.action.run(activity) }
         button.setOnLongClickListener {
             activity.showMenu(

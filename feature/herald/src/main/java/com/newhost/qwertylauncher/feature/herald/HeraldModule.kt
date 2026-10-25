@@ -111,16 +111,14 @@ internal object HeraldSettings {
             Choice("rarely"),
         ),
         default = "sometimes",
-        summary = "How long Sir Alex stays in his tree between visits; always keeps him out on the home screen " +
-            "(sent home, he's back in a minute). Type alex to call him any time.",
+        summary = "Time between visits. Type alex to call him.",
     )
 
     val useAi = ToggleSetting(
         "use_ai",
         "Sir Alex thinks with the AI",
         default = true,
-        summary = "When the AI is set up, Sir Alex uses it to think up his own lines, answer what thou sayest to him " +
-            "(alex and words), and remember. What he remembers, and the names of the tiles on screen, go to the AI.",
+        summary = "He uses the AI to talk. His memory and tile names are sent to it.",
     )
 
     val all = arrayOf(often, useAi)

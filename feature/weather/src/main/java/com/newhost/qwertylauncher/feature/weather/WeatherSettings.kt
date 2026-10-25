@@ -27,7 +27,7 @@ internal object WeatherSettings {
         "rain_warning",
         "rain warning",
         default = true,
-        summary = "Says on the tile and in the report when rain, snow or storms are likely in the next 12 hours, or until when it rains.",
+        summary = "Warns of rain, snow or storms in the next 12 hours.",
     )
     val rainChance = NumberSetting(
         "rain_warning_chance",

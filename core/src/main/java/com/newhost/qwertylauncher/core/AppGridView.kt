@@ -172,6 +172,8 @@ internal class AppGridView(
             // Its art is made to fit: never wrapped.
             setHorizontallyScrolling(true)
             gravity = Gravity.CENTER
+            // A screen reader says the app's name (the cell's), not every character of its art.
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
         }
         val label = TextView(context).apply {
             setTextColor(fg)

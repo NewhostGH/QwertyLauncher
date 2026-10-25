@@ -1,5 +1,8 @@
 [versions]
 agp = "9.4.1"
+# D8 for packing modules (gradle/module.gradle.kts): the release line AGP uses (9.4.x for AGP 9.4).
+# Older ones can't read newer Kotlin's class metadata and warn on every class.
+r8 = "9.4.34"
 kotlin = "2.4.20"
 startupRuntime = "1.2.0"
 interpolator = "1.0.0"
@@ -14,6 +17,8 @@ coreKtx = "1.18.0"
 activity = "1.13.0"
 datastore = "1.2.1"
 junit = "4.13.2"
+# Unit tests only: Android's own org.json is a stub off the phone.
+orgJson = "20250517"
 
 [libraries]
 androidx-startup-runtime = { group = "androidx.startup", name = "startup-runtime", version.ref = "startupRuntime" }
@@ -28,6 +33,8 @@ androidx-recyclerview = { group = "androidx.recyclerview", name = "recyclerview"
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
 androidx-lifecycle-viewmodel-ktx = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+r8 = { group = "com.android.tools", name = "r8", version.ref = "r8" }
+org-json = { group = "org.json", name = "json", version.ref = "orgJson" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
 
 [plugins]

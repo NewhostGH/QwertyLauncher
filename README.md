@@ -23,9 +23,15 @@ classes.dex    the module's own code, built against :core
 The launcher loads it at run time, against its own core, Kotlin, coroutines and androidx.core.
 A module can't bring Android resources or manifest entries: it can use only the permissions and
 components the launcher declares. Build one from a `:feature:*` project with
-`./gradlew :feature:<name>:packModule` (output in `feature/<name>/build/qmod/`), then add it
-with the `module import` command. Imported modules run with all the launcher's permissions:
-only install modules you trust.
+`./gradlew :feature:<name>:signModule` (output in `feature/<name>/build/qmod/signed/`), then add
+it with the `module import` command. `signModule` signs it with the release key in
+`release.properties`; `packModule` makes the same zip unsigned.
+
+Imported modules run with all the launcher's permissions, so `module import` checks who signed
+one: the launcher's own key, the same key as the version installed, a key it hasn't seen (shown
+by fingerprint), or a different key than before (a warning). It refuses a zip changed after
+signing, and an unsigned one unless "allow unsigned modules" is on in config. Only install
+modules you trust.
 
 ## Building
 

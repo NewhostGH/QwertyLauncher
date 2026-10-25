@@ -36,13 +36,13 @@ internal object AsciiSettings {
         "animate_roll",
         "animate: art rolls over when it changes",
         default = true,
-        summary = "When art changes, like the clock's digits, the changed characters scramble, then settle.",
+        summary = "Changed characters scramble, then settle.",
     )
     val animateLive = ToggleSetting(
         "animate_live",
         "animate: moving art (weather, bell)",
         default = true,
-        summary = "Rain and snow fall, the sun turns, the bell rings for new notifications, the battery fills while charging.",
+        summary = "Weather, bell and battery icons move.",
     )
     val animateShimmer = ToggleSetting(
         "animate_shimmer",

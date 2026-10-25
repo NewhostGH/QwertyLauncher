@@ -41,7 +41,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 
-/** How a toggle looks now: its picture, and what it says under the cursor ("bluetooth on: enter turns it off"). */
+/** How a toggle looks now: its picture, and what it says under the cursor ("bluetooth on"). */
 internal class Look(val label: String, val icon: () -> Drawable)
 
 /**
@@ -80,11 +80,8 @@ internal abstract class Switch(
 
     abstract fun isOn(): Boolean
 
-    /** What enter does, in words, when on and when off: "turns it off", "opens its switch". */
-    abstract fun does(on: Boolean): String
-
     override fun looks(): Flow<Look> = changes().map { isOn() }.distinctUntilChanged().map { on ->
-        Look("$name ${if (on) "on" else "off"}: enter ${does(on)}, hold for more", draw(if (on) color else OFF, on))
+        Look("$name ${if (on) "on" else "off"}", draw(if (on) color else OFF, on))
     }
 }
 
@@ -98,7 +95,7 @@ internal open class Shortcut(
     private val draw: Draw,
     private vararg val intents: Intent,
 ) : Toggle(id, name, short) {
-    override fun looks(): Flow<Look> = flowOf(Look("$name: enter opens it", draw(color, true)))
+    override fun looks(): Flow<Look> = flowOf(Look(name, draw(color, true)))
 
     override fun press(host: LauncherHost) = openFirst(context, host, *intents)
 }
@@ -111,7 +108,6 @@ internal class Airplane(private val context: Context) : Switch("airplane", "airp
 
     override fun isOn() = Settings.Global.getInt(context.contentResolver, Settings.Global.AIRPLANE_MODE_ON, 0) == 1
 
-    override fun does(on: Boolean) = "opens its switch"
 
     override fun press(host: LauncherHost) {
         host.startActivitySafely(Intent(Settings.ACTION_AIRPLANE_MODE_SETTINGS))
@@ -128,7 +124,6 @@ internal class Bluetooth(private val context: Context) : Switch("bluetooth", "bl
 
     override fun isOn() = runCatching { adapter?.isEnabled == true }.getOrDefault(false)
 
-    override fun does(on: Boolean) = if (on) "turns it off" else "turns it on"
 
     override fun press(host: LauncherHost) {
         // Asking needs the "nearby devices" permission; without it, the settings still work.
@@ -159,9 +154,9 @@ internal class Ringer(private val context: Context) : Toggle("ringer", "sound", 
     override fun looks(): Flow<Look> =
         context.broadcasts(AudioManager.RINGER_MODE_CHANGED_ACTION).map { audio.ringerMode }.distinctUntilChanged().map { mode ->
             when (mode) {
-                AudioManager.RINGER_MODE_NORMAL -> Look("sound ring: enter sets vibrate, hold for more", Icons.bell(IconColors.GREEN, true))
-                AudioManager.RINGER_MODE_VIBRATE -> Look("sound vibrate: enter sets silent, hold for more", Icons.vibrate(IconColors.YELLOW, true))
-                else -> Look("sound silent: enter sets ring, hold for more", Icons.silent(IconColors.RED, true))
+                AudioManager.RINGER_MODE_NORMAL -> Look("sound ring", Icons.bell(IconColors.GREEN, true))
+                AudioManager.RINGER_MODE_VIBRATE -> Look("sound vibrate", Icons.vibrate(IconColors.YELLOW, true))
+                else -> Look("sound silent", Icons.silent(IconColors.RED, true))
             }
         }
 
@@ -219,7 +214,7 @@ internal class Flashlight(context: Context) : Toggle("flashlight", "flashlight",
         awaitClose { camera.unregisterTorchCallback(callback) }
     }.onStart { emit(lit) }.distinctUntilChanged().map { on ->
         lit = on
-        Look("flashlight ${if (on) "on" else "off"}: enter turns it ${if (on) "off" else "on"}", Icons.torch(if (on) IconColors.YELLOW else OFF, on))
+        Look("flashlight ${if (on) "on" else "off"}", Icons.torch(if (on) IconColors.YELLOW else OFF, on))
     }
 
     override fun press(host: LauncherHost) {
@@ -245,7 +240,6 @@ internal class Wifi(private val context: Context) : Switch("wifi", "wi-fi", "wif
 
     override fun isOn() = runCatching { wifi?.isWifiEnabled == true }.getOrDefault(false)
 
-    override fun does(on: Boolean) = "opens its panel"
 
     override fun press(host: LauncherHost) {
         host.startActivitySafely(Intent(Settings.Panel.ACTION_WIFI))
@@ -262,7 +256,6 @@ internal class MobileData(private val context: Context) : Switch("data", "mobile
 
     override fun isOn() = Settings.Global.getInt(context.contentResolver, MOBILE_DATA, 0) == 1
 
-    override fun does(on: Boolean) = "opens its panel"
 
     override fun press(host: LauncherHost) {
         host.startActivitySafely(Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY))
@@ -292,7 +285,6 @@ internal class Nfc(private val context: Context) : Switch("nfc", "nfc", "nfc", I
 
     override fun isOn() = runCatching { nfc?.isEnabled == true }.getOrDefault(false)
 
-    override fun does(on: Boolean) = "opens its panel"
 
     override fun press(host: LauncherHost) {
         host.startActivitySafely(Intent(Settings.Panel.ACTION_NFC))
@@ -309,7 +301,6 @@ internal class Location(private val context: Context) : Switch("location", "loca
 
     override fun isOn() = runCatching { location.isLocationEnabled }.getOrDefault(false)
 
-    override fun does(on: Boolean) = "opens its settings"
 
     override fun press(host: LauncherHost) {
         host.startActivitySafely(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
@@ -340,7 +331,7 @@ internal class Vpn(private val context: Context) : Toggle("vpn", "vpn", "vpn") {
         connectivity.registerNetworkCallback(request, callback, Handler(Looper.getMainLooper()))
         awaitClose { connectivity.unregisterNetworkCallback(callback) }
     }.onStart { emit(false) }.distinctUntilChanged().map { on ->
-        Look("vpn ${if (on) "connected" else "off"}: enter opens its settings", Icons.lock(if (on) IconColors.GREEN else OFF, on))
+        Look("vpn ${if (on) "connected" else "off"}", Icons.lock(if (on) IconColors.GREEN else OFF, on))
     }
 
     override fun press(host: LauncherHost) {
@@ -365,7 +356,6 @@ internal class DoNotDisturb(private val context: Context) : Switch("dnd", "do no
         it != NotificationManager.INTERRUPTION_FILTER_ALL && it != NotificationManager.INTERRUPTION_FILTER_UNKNOWN
     }
 
-    override fun does(on: Boolean) = if (on) "turns it off" else "turns it on"
 
     override fun press(host: LauncherHost) {
         if (!notifications.isNotificationPolicyAccessGranted) {
@@ -390,7 +380,6 @@ internal class MuteMedia(private val context: Context) : Switch("mute", "media m
 
     override fun isOn() = audio.isStreamMute(AudioManager.STREAM_MUSIC) || audio.getStreamVolume(AudioManager.STREAM_MUSIC) == 0
 
-    override fun does(on: Boolean) = if (on) "unmutes it" else "mutes it"
 
     override fun press(host: LauncherHost) {
         if (isOn()) {
@@ -414,7 +403,6 @@ internal class TouchVibration(private val context: Context) :
 
     override fun isOn() = Settings.System.getInt(context.contentResolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 1) == 1
 
-    override fun does(on: Boolean) = if (on) "turns it off" else "turns it on"
 
     override fun press(host: LauncherHost) {
         if (canWrite(context, host)) Settings.System.putInt(context.contentResolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, if (isOn()) 0 else 1)
@@ -431,7 +419,6 @@ internal class AutoRotate(private val context: Context) : Switch("rotate", "auto
 
     override fun isOn() = Settings.System.getInt(context.contentResolver, Settings.System.ACCELEROMETER_ROTATION, 0) == 1
 
-    override fun does(on: Boolean) = if (on) "turns it off" else "turns it on"
 
     override fun press(host: LauncherHost) {
         if (canWrite(context, host)) Settings.System.putInt(context.contentResolver, Settings.System.ACCELEROMETER_ROTATION, if (isOn()) 0 else 1)
@@ -451,7 +438,6 @@ internal class AutoBrightness(private val context: Context) :
         Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL,
     ) == Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC
 
-    override fun does(on: Boolean) = if (on) "turns it off" else "turns it on"
 
     override fun press(host: LauncherHost) {
         if (!canWrite(context, host)) return
@@ -473,7 +459,7 @@ internal class Brightness(private val context: Context) : Toggle("brightness", "
 
     override fun looks(): Flow<Look> =
         context.settingChanges(Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS)).map { percent() }.distinctUntilChanged().map { now ->
-            Look("brightness $now%: enter sets ${next(now)}%, hold for more", Icons.sun(IconColors.YELLOW, now / 100f))
+            Look("brightness $now%", Icons.sun(IconColors.YELLOW, now / 100f))
         }
 
     override fun press(host: LauncherHost) {
@@ -500,7 +486,7 @@ internal class ScreenTimeout(private val context: Context) : Toggle("timeout", "
 
     override fun looks(): Flow<Look> =
         context.settingChanges(Settings.System.getUriFor(Settings.System.SCREEN_OFF_TIMEOUT)).map { now() }.distinctUntilChanged().map { now ->
-            Look("screen timeout ${words(now)}: enter sets ${words(next(now))}, hold for more", Icons.hourglass(IconColors.LIGHT_BLUE, true))
+            Look("screen timeout ${words(now)}", Icons.hourglass(IconColors.LIGHT_BLUE, true))
         }
 
     override fun press(host: LauncherHost) {
@@ -527,7 +513,6 @@ internal class DarkTheme(private val context: Context) : Switch("dark", "dark th
     override fun isOn() = uiMode.nightMode == UiModeManager.MODE_NIGHT_YES ||
         (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
 
-    override fun does(on: Boolean) = "opens its setting"
 
     override fun press(host: LauncherHost) =
         openFirst(context, host, Intent("android.settings.DARK_THEME_SETTINGS"), Intent(Settings.ACTION_DISPLAY_SETTINGS))
@@ -544,7 +529,6 @@ internal class BatterySaver(private val context: Context) :
 
     override fun isOn() = power.isPowerSaveMode
 
-    override fun does(on: Boolean) = "opens its settings"
 
     override fun press(host: LauncherHost) {
         host.startActivitySafely(Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS))

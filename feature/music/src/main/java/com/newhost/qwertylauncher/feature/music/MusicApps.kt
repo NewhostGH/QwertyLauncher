@@ -41,7 +41,7 @@ internal object MusicApps {
         "music app for the controls",
         listOf(Choice(ASK, "ask")) + apps.map { Choice(it.packageName, it.label.lowercase()) },
         default = ASK,
-        summary = "The app a tap on the tile opens when nothing is playing. Set it to ask to choose again next time.",
+        summary = "Opened when nothing is playing.",
     )
 
     const val ASK = "ask"

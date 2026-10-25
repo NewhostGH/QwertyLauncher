@@ -81,7 +81,7 @@ internal class SensorSettings(parts: List<Part>) {
         "sensors on the tile",
         parts.map { Choice(it.id, it.label) },
         default = parts.map { it.id }.filter { it != Part.ALTITUDE.id && it != Part.LIGHT.id },
-        summary = "The first of the compass and the level is the tile's picture; the rest are lines beside it.",
+        summary = "The first one is drawn; the rest are lines.",
     )
     val stepGoal = NumberSetting("step_goal", "daily step goal", default = 8000, min = 1000, max = 30000, step = 1000, unit = "steps")
 

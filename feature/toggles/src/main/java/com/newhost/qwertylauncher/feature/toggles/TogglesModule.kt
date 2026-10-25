@@ -49,8 +49,7 @@ internal class ToggleStrip(private val settings: SettingsStore, private val togg
         "quick toggles in the top bar",
         toggles.map { Choice(it.id, it.name) },
         default = DEFAULT.filter { id -> toggles.any { it.id == id } },
-        summary = "Tick the toggles to show at the top, as many as fit beside help and config. " +
-            "Hold enter on one there to move them.",
+        summary = "Toggles shown at the top, as many as fit.",
         limit = { room },
     )
 
