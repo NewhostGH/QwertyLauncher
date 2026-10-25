@@ -28,8 +28,8 @@ class SpeechTest {
 
     @Test
     fun signalBarsAreCounted() {
-        assertEquals("wifi signal 3 of 4", Speech.speakable("wifi ${Tty.signal(3)}"))
-        assertEquals("wifi signal 4 of 4", Speech.speakable("wifi ${Tty.signal(4)}"))
+        assertEquals("wi-fi signal 3 of 4", Speech.speakable("wifi ${Tty.signal(3)}"))
+        assertEquals("wi-fi signal 4 of 4", Speech.speakable("wifi ${Tty.signal(4)}"))
     }
 
     @Test
