@@ -12,6 +12,7 @@ import android.view.MotionEvent
 import android.view.View
 import com.newhost.qwertylauncher.core.DragAxis
 import com.newhost.qwertylauncher.core.DragPath
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -265,13 +266,18 @@ internal fun ViewPaneBinding.applyTtyFont() {
 
 /**
  * Puts the pane's title where it belongs: in the frame's top line when the
- * pane is framed, else on its own line. Call after changing the title.
+ * pane is framed, else on its own line. Call after changing the title or keys.
+ *
+ * A screen reader says the title and the keys once, as the pane opens (its
+ * pane title), and leaves the key line out after.
  */
 internal fun ViewPaneBinding.syncFrame() {
     val frame = root
     frame.isFocusable = false
     frame.title = title.text?.toString().orEmpty()
     title.visibility = if (frame.style == TileFrame.Style.NONE) View.VISIBLE else View.GONE
+    keys.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+    ViewCompat.setAccessibilityPaneTitle(frame, Speech.speakable("${frame.title}. ${keys.text}"))
 }
 
 /**

@@ -9,6 +9,7 @@ import kotlin.math.roundToInt
  * other box and block characters, which only draw, are left out. Short
  * words a speech engine says wrong ("todo" as "toad-oh", "ai" as "eye") are
  * spelled the way they're meant: engines have no dictionary to teach them.
+ * Key symbols (⏎, ↑↓, ^c) are said as the keys' names.
  */
 internal object Speech {
 
@@ -21,6 +22,8 @@ internal object Speech {
         s = BAR.replace(s) { m -> "${percent(m.groupValues[1].count { it == '#' }, m.groupValues[1].length)} percent" }
         // Tty.signal: ▂▄▆█, the missing bars as spaces.
         s = SIGNAL.replace(s) { m -> "signal ${m.value.length} of 4" }
+        for ((key, name) in KEY_NAMES) s = s.replace(key, " $name ")
+        s = CONTROL.replace(s) { m -> "control ${m.groupValues[1]}" }
         return words(DRAWING.replace(s, " ").replace(SPACES, " ").trim())
     }
 
@@ -72,6 +75,20 @@ internal object Speech {
         "unin" to "uninstall",
     )
     private val SPACES = Regex("\\s+")
+
+    /** Key symbols as their names; the longer ones first, so ←↑↓→ isn't read as ← and ↑↓. */
+    private val KEY_NAMES = listOf(
+        "\u2190\u2191\u2193\u2192" to "arrows",
+        "\u2191\u2193" to "up down",
+        "\u2190\u2192" to "left right",
+        "\u2190" to "left",
+        "\u2191" to "up",
+        "\u2193" to "down",
+        "\u2192" to "right",
+        "\u23CE" to "enter",
+    )
+    /** ^c, ^n: control and a letter. */
+    private val CONTROL = Regex("\\^([a-z])")
 
     /**
      * Words as the speech engine should say them: abbreviations the launcher

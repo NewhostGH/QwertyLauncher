@@ -75,4 +75,11 @@ class SpeechTest {
         assertEquals("OpenAI mobt", Speech.words("OpenAI mobt"))
         assertTrue(Speech.needed("todo"))
     }
+
+    @Test
+    fun keysAreSaidByName() {
+        assertEquals("up down move enter open esc back", Speech.speakable("↑↓ move  ⏎ open  esc back"))
+        assertEquals("type enter send control c stop", Speech.speakable("type ⏎ send  ^c stop"))
+        assertEquals("arrows wasd", Speech.speakable("←↑↓→ wasd"))
+    }
 }
