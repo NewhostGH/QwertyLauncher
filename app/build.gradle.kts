@@ -1,28 +1,16 @@
 
 import java.util.Properties
-import java.io.FileInputStream
 
 plugins {
     alias(libs.plugins.android.application)
 }
 
+// The release key, from release.properties (never committed). Without it builds are unsigned.
 val keystorePropsFile = rootProject.file("release.properties")
-val keystoreProps = Properties()
-
-if (keystorePropsFile.exists()) {
-    keystoreProps.load(FileInputStream(keystorePropsFile))
+val keystoreProps = Properties().apply {
+    if (keystorePropsFile.exists()) keystorePropsFile.inputStream().use { load(it) }
 }
-
-val hasValidSigningProps = keystorePropsFile.exists().also { exists ->
-    if (exists) {
-        FileInputStream(keystorePropsFile).use { keystoreProps.load(it) }
-    }
-}.let {
-    listOf("storeFile", "storePassword", 
-            "keyAlias", "keyPassword").all { key ->
-        keystoreProps[key] != null
-    }
-}
+val hasValidSigningProps = listOf("storeFile", "storePassword", "keyAlias", "keyPassword").all { keystoreProps[it] != null }
 
 
 android {
