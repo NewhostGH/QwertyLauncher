@@ -588,7 +588,7 @@ internal class ControlCell(context: Context, private val env: GridEnv) : CellVie
         val old = this.cell
         this.cell = new
         control.key = new.key
-        control.contentDescription = new.label
+        control.contentDescription = Speech.speakable(new.label)
         control.setOnClickListener { env.host?.let { host -> new.action.run(host) } }
         // Holding enter (or a long touch) shows its menu, if it has one.
         val menu = new.menu
