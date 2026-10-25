@@ -8,6 +8,7 @@ import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.newhost.qwertylauncher.R
 import com.newhost.qwertylauncher.core.ChoiceSetting
@@ -17,6 +18,7 @@ import com.newhost.qwertylauncher.core.Setting
 import com.newhost.qwertylauncher.core.SettingsStore
 import com.newhost.qwertylauncher.core.ToggleSetting
 import com.newhost.qwertylauncher.shell.SettingsSection
+import com.newhost.qwertylauncher.ui.Speech
 import com.newhost.qwertylauncher.ui.TtyFont
 import kotlin.math.roundToInt
 import com.newhost.qwertylauncher.core.R as CoreR
@@ -206,6 +208,9 @@ internal class SettingsAdapter(
                 is SettingsRow.Item -> if (editing != null) editor(row, editing) else item(row, atCursor)
                 is SettingsRow.Section -> section(row, atCursor)
             }
+            // To a screen reader: the row's words, without the marker or drawing; headers as headings.
+            view.contentDescription = Speech.row(view.text)
+            ViewCompat.setAccessibilityHeading(view, row is SettingsRow.Header)
         }
 
         /**

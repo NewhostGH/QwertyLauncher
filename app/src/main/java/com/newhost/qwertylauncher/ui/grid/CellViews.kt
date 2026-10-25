@@ -22,6 +22,7 @@ import com.newhost.qwertylauncher.core.Track
 import com.newhost.qwertylauncher.ui.ArtPlayer
 import com.newhost.qwertylauncher.ui.ArtShape
 import com.newhost.qwertylauncher.ui.ArtView
+import com.newhost.qwertylauncher.ui.Speech
 import com.newhost.qwertylauncher.ui.TtyFont
 import kotlin.math.ceil
 import kotlin.math.max
@@ -241,6 +242,8 @@ internal class TextCell(context: Context) : CellView {
         if (!new.wrap) text.ellipsize = null
         // The same text (colours included) isn't set again: setting it asks for another layout.
         if (old == null || old.text != new.text) text.text = new.text
+        // Meters and drawing characters, said as words by a screen reader; or what the module says it shows.
+        text.contentDescription = new.spoken ?: if (Speech.needed(new.text)) Speech.speakable(new.text) else null
     }
 
     override fun naturalColumns(room: Int, roomLines: Int?): Int = content?.let { naturalColumns(it) } ?: 0
@@ -266,7 +269,11 @@ internal class TextCell(context: Context) : CellView {
  * animation and new sizes just show.
  */
 internal class ArtCell(context: Context, private val env: GridEnv) : CellView {
-    private val art = ArtView(context).apply { includeFontPadding = false }
+    // Pictures are decoration to a screen reader, which would read every character of them.
+    private val art = ArtView(context).apply {
+        includeFontPadding = false
+        importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+    }
     override val view: View get() = art
     private var cell: Cell.Art? = null
     private var columns = 0
@@ -283,6 +290,7 @@ internal class ArtCell(context: Context, private val env: GridEnv) : CellView {
 
     override fun bind(cell: Cell) {
         this.cell = cell as Cell.Art
+        spoken(art, cell.spoken)
         redraw()
     }
 
@@ -363,9 +371,22 @@ internal class ArtCell(context: Context, private val env: GridEnv) : CellView {
     }
 }
 
+/**
+ * Art to a screen reader: what the module says it shows, or nothing at all,
+ * as decoration, rather than every character of it.
+ */
+private fun spoken(art: View, spoken: String?) {
+    art.contentDescription = spoken
+    art.importantForAccessibility =
+        if (spoken == null) View.IMPORTANT_FOR_ACCESSIBILITY_NO else View.IMPORTANT_FOR_ACCESSIBILITY_YES
+}
+
 /** Art that's already text, scaled to fit its area. */
 internal class PictureCell(context: Context, private val env: GridEnv) : CellView {
-    private val art = ArtView(context).apply { includeFontPadding = false }
+    private val art = ArtView(context).apply {
+        includeFontPadding = false
+        importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+    }
     override val view: View get() = art
     private var cell: Cell.Picture? = null
     private var selected = false
@@ -375,6 +396,7 @@ internal class PictureCell(context: Context, private val env: GridEnv) : CellVie
     override fun bind(cell: Cell) {
         val new = cell as Cell.Picture
         this.cell = new
+        spoken(art, new.spoken)
         player().show(new.art, new.live)
     }
 
@@ -436,6 +458,7 @@ internal class ChartCell(context: Context) : CellView {
 
     override fun bind(cell: Cell) {
         chart = cell as Cell.Chart
+        text.contentDescription = Speech.chart(cell.values)
         redraw()
     }
 

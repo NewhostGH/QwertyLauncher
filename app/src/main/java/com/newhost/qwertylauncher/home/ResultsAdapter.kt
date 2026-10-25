@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.newhost.qwertylauncher.R
 import com.newhost.qwertylauncher.core.SearchResult
+import com.newhost.qwertylauncher.ui.Speech
 import com.newhost.qwertylauncher.ui.TtyFont
 import com.newhost.qwertylauncher.core.R as CoreR
 
@@ -96,6 +97,8 @@ internal class ResultsAdapter(
                     append(it, ForegroundColorSpan(if (isSelected) bg else dim), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 }
             }
+            // To a screen reader: what it is and its words, not the marker and padded tag.
+            view.contentDescription = Speech.result(result.tag, result.title, result.detail)
         }
     }
 

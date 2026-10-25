@@ -9,6 +9,7 @@ import android.view.ActionMode
 import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
+import android.view.accessibility.AccessibilityNodeInfo
 import androidx.appcompat.widget.AppCompatEditText
 import com.newhost.qwertylauncher.core.R as CoreR
 
@@ -43,6 +44,12 @@ class PromptInput @JvmOverloads constructor(
             invalidate()
             if (blink && isFocused) postDelayed(this, BLINK_MS)
         }
+    }
+
+    /** A hint only a screen reader gives: a shown one would break the terminal look. */
+    override fun onInitializeAccessibilityNodeInfo(info: AccessibilityNodeInfo) {
+        super.onInitializeAccessibilityNodeInfo(info)
+        info.hintText = "type a command or search"
     }
 
     init {

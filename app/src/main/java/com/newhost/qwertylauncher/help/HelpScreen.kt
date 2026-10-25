@@ -9,12 +9,14 @@ import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.newhost.qwertylauncher.R
 import com.newhost.qwertylauncher.core.Command
 import com.newhost.qwertylauncher.databinding.ViewPaneBinding
 import com.newhost.qwertylauncher.ui.PaneCursor
 import com.newhost.qwertylauncher.ui.PaneState
+import com.newhost.qwertylauncher.ui.Speech
 import com.newhost.qwertylauncher.ui.TtyFont
 import com.newhost.qwertylauncher.ui.applyTtyFont
 import com.newhost.qwertylauncher.ui.VimKeys
@@ -236,6 +238,9 @@ internal class HelpAdapter(
                     view.text = line(marker, row.keys, row.does, atCursor)
                 }
             }
+            // To a screen reader: the row's words, without the marker or drawing; headers as headings.
+            view.contentDescription = Speech.row(view.text)
+            ViewCompat.setAccessibilityHeading(view, row is HelpRow.Header)
         }
 
         private fun line(marker: String, left: String, right: String, atCursor: Boolean) = SpannableStringBuilder().apply {

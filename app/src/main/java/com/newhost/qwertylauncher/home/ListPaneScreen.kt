@@ -10,6 +10,7 @@ import android.view.Gravity
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -26,6 +27,7 @@ import com.newhost.qwertylauncher.databinding.ViewPaneBinding
 import com.newhost.qwertylauncher.ui.ArtShape
 import com.newhost.qwertylauncher.ui.PaneCursor
 import com.newhost.qwertylauncher.ui.PaneState
+import com.newhost.qwertylauncher.ui.Speech
 import com.newhost.qwertylauncher.ui.TtyFont
 import com.newhost.qwertylauncher.ui.VimKeys
 import com.newhost.qwertylauncher.ui.applyTtyFont
@@ -300,6 +302,9 @@ internal class PaneRowAdapter(
                 }
                 is PaneRow.Block -> Unit
             }
+            // To a screen reader: the row's words, without the marker, icon or drawing; headers as headings.
+            item.root.contentDescription = Speech.row(view.text)
+            ViewCompat.setAccessibilityHeading(item.root, row is PaneRow.Header)
         }
 
         /**

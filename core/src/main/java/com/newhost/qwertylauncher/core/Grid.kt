@@ -49,8 +49,15 @@ data class Size(val columns: Int, val lines: Int)
 
 /** What fills one area of a [Grid]. */
 sealed interface Cell {
-    /** Terminal text. It wraps at the area's edge, or with [wrap] off is cut there. */
-    data class Text(val text: CharSequence, val wrap: Boolean = true) : Cell
+    /**
+     * Terminal text. It wraps at the area's edge, or with [wrap] off is cut there.
+     * Set [spoken] when it's drawn in characters a screen reader can't read
+     * (seven-segment digits); meters and box characters are taken care of.
+     */
+    data class Text(val text: CharSequence, val wrap: Boolean = true) : Cell {
+        /** What a screen reader says for it; null for its own text. */
+        var spoken: String? = null
+    }
 
     /**
      * A drawing rendered to ASCII art to fit its area exactly, so it looks
@@ -76,14 +83,20 @@ sealed interface Cell {
         val frame: Int = 0,
         val fill: Boolean = false,
         val drawable: () -> Drawable,
-    ) : Cell
+    ) : Cell {
+        /** What a screen reader says for it (the time a clock's digits show); null leaves it out, as decoration. */
+        var spoken: String? = null
+    }
 
     /**
      * Art already drawn as text (e.g. by an [IconRenderer]), scaled to fit its
      * area; [size] is what it would like, for `auto` tracks. [live] marks a
      * frame of its own animation.
      */
-    data class Picture(val art: CharSequence, val size: Size, val live: Boolean = false) : Cell
+    data class Picture(val art: CharSequence, val size: Size, val live: Boolean = false) : Cell {
+        /** What a screen reader says for it; null leaves it out, as decoration. */
+        var spoken: String? = null
+    }
 
     /** Another grid inside this area. */
     data class Nested(val layout: Responsive) : Cell

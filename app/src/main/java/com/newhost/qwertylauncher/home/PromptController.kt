@@ -5,6 +5,7 @@ import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
 import android.view.KeyEvent
+import android.view.View
 import android.view.ViewConfiguration
 import android.view.inputmethod.EditorInfo
 import androidx.core.view.WindowInsetsCompat
@@ -14,10 +15,13 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.newhost.qwertylauncher.core.ArtAnimator
+import com.newhost.qwertylauncher.core.SearchResult
 import com.newhost.qwertylauncher.core.find
 import com.newhost.qwertylauncher.shell.ShellHistory
 import com.newhost.qwertylauncher.shell.ShellSettings
 import com.newhost.qwertylauncher.ui.InputMonitor
+import com.newhost.qwertylauncher.ui.ReaderCursor
+import com.newhost.qwertylauncher.ui.Speech
 import com.newhost.qwertylauncher.ui.terminalStyle
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -44,6 +48,11 @@ internal class PromptController(private val activity: HomeActivity) {
     private var cursorVisible = true
     private var flashing = false
 
+    private lateinit var resultsReader: ReaderCursor
+    /** The results and selection last rendered, to tell the arrows moving it from new results. */
+    private var lastResults: List<SearchResult>? = null
+    private var lastSelected = -1
+
     /** The console text last rendered, to spot new output; and the job restoring the idle line. */
     private var lastConsole: CharSequence? = null
     private var flashJob: Job? = null
@@ -69,6 +78,8 @@ internal class PromptController(private val activity: HomeActivity) {
         binding.results.layoutManager = LinearLayoutManager(activity).apply { reverseLayout = true }
         binding.results.adapter = resultsAdapter
         binding.results.terminalStyle()
+        // A screen reader choosing a result selects it, so a double tap (or enter) opens that one.
+        resultsReader = ReaderCursor(binding.results) { position -> viewModel.select(position) }
 
         // Touch users have no key to press: tapping the idle line opens the prompt with the soft keyboard.
         binding.idleHint.setOnClickListener {
@@ -150,6 +161,10 @@ internal class PromptController(private val activity: HomeActivity) {
         val shown = state.shownResults
         resultsAdapter.submit(shown, state.selected)
         if (shown.isNotEmpty()) binding.results.scrollToPosition(state.selected)
+        // The arrows moved the selection through the same results: a screen reader reads the new one.
+        if (state.results === lastResults && state.selected != lastSelected) resultsReader.follow(state.selected)
+        lastResults = state.results
+        lastSelected = state.selected
 
         // The console belongs to the prompt: on the home screen new output only flashes in the idle line.
         binding.console.text = state.console
@@ -175,6 +190,8 @@ internal class PromptController(private val activity: HomeActivity) {
             append(promptText(), ForegroundColorSpan(activity.getColor(CoreR.color.tty_accent)), SPAN)
             append(if (cursorVisible) "█" else " ", ForegroundColorSpan(activity.getColor(CoreR.color.tty_fg)), SPAN)
         }
+        // Not the prompt's characters and blinking block: what it is.
+        binding.idleHint.contentDescription = IDLE_SPEECH
     }
 
     fun blinkCursor() {
@@ -210,10 +227,14 @@ internal class PromptController(private val activity: HomeActivity) {
     fun flash(message: CharSequence) {
         flashJob?.cancel()
         flashing = true
+        // New output shows here on home; a screen reader says it as it comes (and not the idle line after).
+        binding.idleHint.accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
+        binding.idleHint.contentDescription = Speech.speakable(message)
         binding.idleHint.text = message
         flashJob = activity.lifecycleScope.launch {
             delay(FLASH_MS)
             flashing = false
+            binding.idleHint.accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_NONE
             renderIdleLine()
         }
     }
@@ -387,5 +408,7 @@ internal class PromptController(private val activity: HomeActivity) {
         const val BLINK_MS = 530L
         const val SPAN = Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
         const val FLASH_MS = 4_000L
+        /** What a screen reader says for the idle line. */
+        const val IDLE_SPEECH = "command prompt, tap to type"
     }
 }
