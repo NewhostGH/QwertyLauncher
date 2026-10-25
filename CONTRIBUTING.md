@@ -56,3 +56,22 @@ looks like an API key or token.
 - Pushed branch names follow the rules above.
 - Every commit being pushed is checked against the commit rules again, so one made with
   `--no-verify` is caught here. Fix it with `git rebase -i`.
+
+## Releasing
+
+GitHub Actions builds every push (`.github/workflows/ci.yml`: unit tests, a debug APK, lint).
+A version tag publishes a release (`.github/workflows/release.yml`):
+
+1. Raise `versionCode` and `versionName` in `app/build.gradle.kts`, and write
+   `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`.
+2. Join it to `main`, then tag that commit `v<versionName>` and push the tag:
+
+   ```
+   git tag -a v1.1 -m "QwertyLauncher 1.1"
+   git push origin main v1.1
+   ```
+
+The release gets the APK and the signed modules, signed with the release key from the
+repository secrets `RELEASE_KEYSTORE_BASE64`, `RELEASE_STORE_PASSWORD`, `RELEASE_KEY_ALIAS` and
+`RELEASE_KEY_PASSWORD`. F-Droid picks up new tags by itself (`UpdateCheckMode: Tags` in
+`fdroid/com.newhost.qwertylauncher.yml`).

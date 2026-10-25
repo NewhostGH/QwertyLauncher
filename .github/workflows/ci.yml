@@ -1,0 +1,56 @@
+# Builds every push and pull request: unit tests, a debug APK, and lint (hints only, never fails).
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # gradle/module.gradle.kts looks for android-36's android.jar while Gradle configures,
+      # before AGP would fetch it, so it has to be there first.
+      - name: Install Android platform 36
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-36' > /dev/null
+
+      - uses: gradle/actions/setup-gradle@v5
+
+      # gradle.properties keeps the phone to one worker; the runner can take more.
+      - name: Test and build
+        run: ./gradlew --max-workers=4 testDebugUnitTest :app:assembleDebug
+
+      - name: Lint
+        run: ./gradlew --max-workers=4 lintDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reports
+          path: |
+            build/lint/
+            **/build/reports/tests/
+          retention-days: 14

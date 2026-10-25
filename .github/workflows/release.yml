@@ -1,0 +1,107 @@
+# Publishes a GitHub release for a version tag (v1.0, v1.1, ...): the release APK and the
+# feature modules as signed .qmod zips, with the fastlane changelog as release notes.
+# F-Droid builds the same tag itself (fdroid/com.newhost.qwertylauncher.yml).
+#
+# Signing needs four repository secrets; without them the APK is published unsigned:
+#   RELEASE_KEYSTORE_BASE64   base64 of the keystore file
+#   RELEASE_STORE_PASSWORD, RELEASE_KEY_ALIAS, RELEASE_KEY_PASSWORD
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      # The tag names the version: v1.0 must be versionName "1.0" in app/build.gradle.kts.
+      - name: Check the tag against the version
+        id: version
+        run: |
+          name=$(sed -n 's/^ *versionName = "\(.*\)"/\1/p' app/build.gradle.kts)
+          code=$(sed -n 's/^ *versionCode = \([0-9]*\)/\1/p' app/build.gradle.kts)
+          if [ "v$name" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::tag $GITHUB_REF_NAME doesn't match versionName $name"
+            exit 1
+          fi
+          notes=fastlane/metadata/android/en-US/changelogs/$code.txt
+          if [ ! -s "$notes" ]; then
+            echo "::error::no changelog for versionCode $code ($notes)"
+            exit 1
+          fi
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "notes=$notes" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # gradle/module.gradle.kts looks for android-36's android.jar while Gradle configures.
+      - name: Install Android platform 36
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'platforms;android-36' > /dev/null
+
+      - uses: gradle/actions/setup-gradle@v5
+        with:
+          cache-read-only: true
+
+      # The same release.properties the phone build reads; it and the keystore stay on the runner.
+      - name: Set up the release key
+        id: key
+        env:
+          KEYSTORE: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE" ]; then
+            echo "::warning::no RELEASE_KEYSTORE_BASE64 secret, so the APK is unsigned"
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          printf '%s' "$KEYSTORE" | base64 -d > release.keystore
+          {
+            echo "storeFile=release.keystore"
+            echo "storePassword=$STORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > release.properties
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: |
+          tasks=:app:assembleRelease
+          [ "${{ steps.key.outputs.signed }}" = true ] && tasks="$tasks signModule"
+          ./gradlew --max-workers=4 $tasks
+
+      - name: Collect the files
+        run: |
+          mkdir dist
+          apk=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          if [ "${{ steps.key.outputs.signed }}" = true ]; then
+            cp "$apk" "dist/QwertyLauncher-${{ steps.version.outputs.name }}.apk"
+            cp feature/*/build/qmod/signed/*.qmod dist/
+          else
+            cp "$apk" "dist/QwertyLauncher-${{ steps.version.outputs.name }}-unsigned.apk"
+          fi
+          (cd dist && sha256sum * > SHA256SUMS)
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "QwertyLauncher ${{ steps.version.outputs.name }}" \
+            --notes-file "${{ steps.version.outputs.notes }}" \
+            --verify-tag
+
+      - name: Remove the release key
+        if: always()
+        run: rm -f release.keystore release.properties
