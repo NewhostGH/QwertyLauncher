@@ -6,7 +6,9 @@ import kotlin.math.roundToInt
  * What a screen reader should say for terminal text. Meters, bars and
  * signal bars are block characters that would be read out one by one ("full
  * block, full block, light shade"), so they're said as what they mean, and
- * other box and block characters, which only draw, are left out.
+ * other box and block characters, which only draw, are left out. Short
+ * words a speech engine says wrong ("todo" as "toad-oh", "ai" as "eye") are
+ * spelled the way they're meant: engines have no dictionary to teach them.
  */
 internal object Speech {
 
@@ -19,8 +21,11 @@ internal object Speech {
         s = BAR.replace(s) { m -> "${percent(m.groupValues[1].count { it == '#' }, m.groupValues[1].length)} percent" }
         // Tty.signal: ▂▄▆█, the missing bars as spaces.
         s = SIGNAL.replace(s) { m -> "signal ${m.value.length} of 4" }
-        return DRAWING.replace(s, " ").replace(SPACES, " ").trim()
+        return words(DRAWING.replace(s, " ").replace(SPACES, " ").trim())
     }
+
+    /** [text] with the [SAID] words spelled as they're said; the rest as it is. */
+    fun words(text: String): String = WORD.replace(text) { m -> SAID[m.value.lowercase()] ?: m.value }
 
     /** A list row for a screen reader: [speakable], without the cursor marker ("> ") it starts with. */
     fun row(text: CharSequence): String = speakable(text.toString().trimStart().removePrefix(">").trimStart())
@@ -31,7 +36,9 @@ internal object Speech {
             .joinToString(", ")
 
     /** True when [text] has something [speakable] would say differently. */
-    fun needed(text: CharSequence): Boolean = text.any { it in '\u2500'..'\u25FF' || it in '\u2800'..'\u28FF' } || BAR.containsMatchIn(text)
+    fun needed(text: CharSequence): Boolean =
+        text.any { it in '\u2500'..'\u25FF' || it in '\u2800'..'\u28FF' } || BAR.containsMatchIn(text) ||
+            WORD.findAll(text).any { it.value.lowercase() in SAID }
 
     /** A chart's values in words: "chart from 3 to 9, latest 7". */
     fun chart(values: List<Double>): String {
@@ -65,4 +72,31 @@ internal object Speech {
         "unin" to "uninstall",
     )
     private val SPACES = Regex("\\s+")
+
+    /**
+     * Words as the speech engine should say them: abbreviations the launcher
+     * uses, and words it reads wrong. Matched whole and in any case.
+     */
+    private val SAID = mapOf(
+        "ai" to "A I",
+        "todo" to "to do",
+        "todos" to "to dos",
+        "bt" to "bluetooth",
+        "wx" to "weather",
+        "dnd" to "do not disturb",
+        "uv" to "U V",
+        "cfg" to "config",
+        "notif" to "notifications",
+        "calc" to "calculator",
+        "sys" to "system",
+        "nfc" to "N F C",
+        "vpn" to "V P N",
+        "gps" to "G P S",
+        "usb" to "U S B",
+        "cpu" to "C P U",
+        "wifi" to "wi-fi",
+        "ascii" to "askey",
+        "hpa" to "hectopascals",
+    )
+    private val WORD = Regex("[A-Za-z]+")
 }

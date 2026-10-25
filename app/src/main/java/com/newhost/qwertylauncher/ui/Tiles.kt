@@ -699,7 +699,7 @@ class TileFrame @JvmOverloads constructor(
     /** The title is drawn in the frame, out of a screen reader's sight: it says the tile's name instead. */
     override fun onInitializeAccessibilityNodeInfo(info: AccessibilityNodeInfo) {
         super.onInitializeAccessibilityNodeInfo(info)
-        AccessibilityNodeInfoCompat.wrap(info).roleDescription = if (title.isEmpty()) "tile" else "$title tile"
+        AccessibilityNodeInfoCompat.wrap(info).roleDescription = if (title.isEmpty()) "tile" else "${Speech.words(title)} tile"
     }
 
     private companion object {

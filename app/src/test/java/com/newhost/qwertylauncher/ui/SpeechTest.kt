@@ -18,7 +18,7 @@ class SpeechTest {
 
     @Test
     fun twoMetersOnALineStayApart() {
-        assertEquals("cpu 20 percent ram 70 percent", Speech.speakable("cpu ${Tty.meter(0.2f)} ram ${Tty.meter(0.7f)}"))
+        assertEquals("C P U 20 percent ram 70 percent", Speech.speakable("cpu ${Tty.meter(0.2f)} ram ${Tty.meter(0.7f)}"))
     }
 
     @Test
@@ -64,5 +64,15 @@ class SpeechTest {
         // Decimals as the phone's language writes them, which is how the screen reader reads them.
         val half = "%.1f".format(1.5)
         assertEquals("chart from $half to 2, latest $half", Speech.chart(listOf(2.0, 1.5)))
+    }
+
+    @Test
+    fun wordsAreSaidAsMeant() {
+        assertEquals("to do, 3 left", Speech.speakable("todo, 3 left"))
+        assertEquals("ask A I", Speech.speakable("ask AI"))
+        assertEquals("bluetooth on", Speech.words("bt on"))
+        // Only whole words: inside another word they're left alone.
+        assertEquals("OpenAI mobt", Speech.words("OpenAI mobt"))
+        assertTrue(Speech.needed("todo"))
     }
 }
