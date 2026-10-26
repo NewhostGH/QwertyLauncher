@@ -3,8 +3,8 @@
 AntiFeatures:
   NonFreeNet:
     en-US: The optional AI assistant can use Anthropic, OpenAI, Google Gemini or OpenRouter,
-      which are non-free network services. It is off until set up, and a self-hosted Ollama
-      server works instead.
+      which are non-free network services. It is off until set up, and a self-hosted
+      Ollama server works instead.
 Categories:
   - Launcher
 License: GPL-3.0-or-later
@@ -17,12 +17,13 @@ AutoName: QwertyLauncher
 
 RepoType: git
 Repo: https://github.com/NewhostGH/QwertyLauncher.git
-Binaries: https://github.com/NewhostGH/QwertyLauncher/releases/download/v%v/QwertyLauncher-%v.apk
+Binaries: 
+  https://github.com/NewhostGH/QwertyLauncher/releases/download/v%v/QwertyLauncher-%v.apk
 
 Builds:
-  - versionName: '1.0'
-    versionCode: 1
-    commit: 41e27094b1f985784d22313c383cbe8c5efdea02
+  - versionName: 1.0.1
+    versionCode: 2
+    commit: 06080ca1072b310626bc1e88b0744fc5210afa67
     subdir: app
     gradle:
       - yes
@@ -31,5 +32,5 @@ AllowedAPKSigningKeys: 022cbe29f956c078b5474a07c54daf0bc52bcb98e45015bf72aaff91e
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: '1.0'
-CurrentVersionCode: 1
+CurrentVersion: 1.0.1
+CurrentVersionCode: 2
