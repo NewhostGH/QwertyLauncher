@@ -18,13 +18,19 @@ dependencies.add(
 val qmod = layout.buildDirectory.dir("qmod")
 val aar = layout.buildDirectory.file("outputs/aar/${project.name}-release.aar")
 
-/** The Android platform's classes, which D8 compiles against; found where build.sh finds aapt2. */
-val androidJar: File? = run {
+/**
+ * The Android platform's classes, which D8 compiles against; found where build.sh finds aapt2.
+ * Looked up when D8 runs, not while Gradle configures: AGP installs a missing platform only after
+ * that (as on F-Droid's build server), and D8 without it makes different dex, so the APK wouldn't
+ * match the release one.
+ */
+fun androidJar(): File {
     val props = rootProject.file("local.properties").takeIf { it.exists() }?.readLines()
         ?.firstOrNull { it.startsWith("sdk.dir=") }?.substringAfter('=')
-    listOfNotNull(props, System.getenv("ANDROID_HOME"), System.getenv("ANDROID_SDK_ROOT"), System.getProperty("user.home") + "/android-sdk")
+    return listOfNotNull(props, System.getenv("ANDROID_HOME"), System.getenv("ANDROID_SDK_ROOT"), System.getProperty("user.home") + "/android-sdk")
         .map { File(it, "platforms/android-36/android.jar") }
         .firstOrNull { it.exists() }
+        ?: throw GradleException("D8 needs the Android 36 platform (platforms/android-36/android.jar) in the SDK")
 }
 
 val unpackModuleClasses = tasks.register("unpackModuleClasses", Copy::class.java) {
@@ -37,7 +43,6 @@ val dexModule = tasks.register("dexModule", JavaExec::class.java) {
     dependsOn(unpackModuleClasses)
     val jar = qmod.map { it.file("jar/classes.jar") }
     val out = qmod.map { it.dir("dex") }
-    val lib = androidJar
     inputs.file(jar)
     outputs.dir(out)
     classpath = d8Tool
@@ -49,7 +54,7 @@ val dexModule = tasks.register("dexModule", JavaExec::class.java) {
     argumentProviders.add(
         CommandLineArgumentProvider {
             listOf("--min-api", "34", "--output", out.get().asFile.path) +
-                (lib?.let { listOf("--lib", it.path) } ?: emptyList()) +
+                listOf("--lib", androidJar().path) +
                 jar.get().asFile.path
         },
     )
