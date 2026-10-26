@@ -1,0 +1,1 @@
+Builds the same on F-Droid as on GitHub, so F-Droid can ship the release signed by its developer.

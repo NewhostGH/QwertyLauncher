@@ -6,6 +6,12 @@ and versions are the app's `versionName`. Each release's short notes for F-Droid
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-26
+
+### Fixed
+
+- The bundled modules build the same everywhere, so F-Droid's build matches the release APK.
+
 ## [1.0] - 2026-10-25
 
 First release.
@@ -26,5 +32,6 @@ First release.
 - Screen reader support: panes read their keys once as they open, toggles say their state,
   and abbreviations are spoken as meant.
 
-[Unreleased]: https://github.com/NewhostGH/QwertyLauncher/compare/v1.0...HEAD
+[Unreleased]: https://github.com/NewhostGH/QwertyLauncher/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/NewhostGH/QwertyLauncher/compare/v1.0...v1.0.1
 [1.0]: https://github.com/NewhostGH/QwertyLauncher/releases/tag/v1.0
