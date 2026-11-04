@@ -3,7 +3,7 @@
 # QwertyLauncher
 
 A terminal-style Android home screen made for phones with a physical QWERTY keyboard
-(built on a Unihertz Titan 2). Text on a strict character grid, pictures in coloured ASCII,
+(built on a Unihertz Titan 2 Elite). Text on a strict character grid, pictures in coloured ASCII,
 and everything reachable from the keyboard.
 
 - Type on home to search apps, contacts, shortcuts and files, or run a command (`help` lists them)
