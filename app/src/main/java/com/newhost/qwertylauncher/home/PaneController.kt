@@ -65,7 +65,7 @@ internal class PaneController(private val activity: HomeActivity) {
             },
             onClose = { close() },
         )
-        modulePaneScreen = ListPaneScreen(binding.modulePane, viewModel.modulePaneState, activity, activity, activity.gridEnv) { close() }
+        modulePaneScreen = ListPaneScreen(binding.modulePane, viewModel.modulePaneState, activity, activity, activity.gridEnv, activity::releaseKeyboard) { close() }
         activity.whileStarted {
             settings.snapshot.collect { configScreen.refresh() }
         }

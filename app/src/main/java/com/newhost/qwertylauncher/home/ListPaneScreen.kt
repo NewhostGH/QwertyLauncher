@@ -45,6 +45,8 @@ internal class ListPaneScreen(
     private val host: LauncherHost,
     private val owner: LifecycleOwner,
     private val gridEnv: GridEnv,
+    /** Takes the keyboard app off the input line when it goes (see HomeActivity.releaseKeyboard). */
+    private val releaseKeyboard: () -> Unit,
     private val onClose: () -> Unit,
 ) {
     private var pane: ListPane? = null
@@ -114,7 +116,7 @@ internal class ListPaneScreen(
         binding.input.setTextSize(TypedValue.COMPLEX_UNIT_SP, TtyFont.sizeSp)
         if (new == null) {
             binding.input.text?.clear()
-            binding.input.clearFocus()
+            if (binding.input.hasFocus()) releaseKeyboard()
             return
         }
         binding.input.hint = new.hint

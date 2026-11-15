@@ -296,6 +296,26 @@ class HomeActivity : AppCompatActivity(), LauncherHost, ShellHost {
         val consoleVisible = state.console.isNotEmpty() && !paneOpen && state.promptOpen
         cursor.showHome(!state.searching && !paneOpen && !consoleVisible)
         prompt.render(state, consoleVisible)
+        // A pane without its own input line has nothing to type into (KeyRouting).
+        if (paneOpen && !panes.hasInputLine) releaseKeyboard()
+    }
+
+    /**
+     * Takes the keyboard app off every text field: focus goes to the screen
+     * itself, which takes no text. Clearing a field's focus isn't enough, as
+     * Android leaves the keyboard app attached to it until another view takes
+     * focus, and the keyboard app gets hardware keys before the launcher does:
+     * it would go on typing into the hidden prompt under a pane.
+     */
+    internal fun releaseKeyboard() {
+        val root = binding.root
+        if (currentFocus === root) return
+        root.isFocusable = true
+        root.isFocusableInTouchMode = true
+        // No focus highlight: nothing a terminal couldn't show.
+        root.defaultFocusHighlightEnabled = false
+        root.requestFocus()
+        keyboard().hide(WindowInsetsCompat.Type.ime())
     }
 
     internal fun keyboard() = WindowCompat.getInsetsController(window, binding.query)

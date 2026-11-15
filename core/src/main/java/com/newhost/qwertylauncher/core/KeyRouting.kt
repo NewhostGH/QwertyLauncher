@@ -16,6 +16,10 @@ import android.view.KeyEvent
  *    Back then comes round again as Esc does.
  * 4. **A surface with its own text line** (a pane's [ListPane.input]) lets the
  *    keys it didn't use go to that line, so they type there.
+ * 5. **Without one, no text field keeps the keyboard app.** Keyboard apps get
+ *    hardware keys before the launcher, and stay attached to a field that
+ *    merely lost focus, so the shell moves focus off every field onto the
+ *    screen itself while such a surface is open.
  *
  * So a module only says whether it used a key: return true from `onKey` for
  * keys it acted on and false for the rest. It never swallows keys itself, and
