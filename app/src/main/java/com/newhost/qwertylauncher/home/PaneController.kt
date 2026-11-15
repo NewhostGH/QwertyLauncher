@@ -155,6 +155,9 @@ internal class PaneController(private val activity: HomeActivity) {
         return true
     }
 
+    /** True while a module's pane shows its own input line: the keys it doesn't use type there. */
+    val hasInputLine: Boolean get() = open == Pane.MODULE && modulePaneScreen.hasInputLine
+
     /** The open pane's keys; null when no pane is open. */
     fun onKey(event: KeyEvent): Boolean? = when (open) {
         Pane.CONFIG -> configScreen.onKey(event)

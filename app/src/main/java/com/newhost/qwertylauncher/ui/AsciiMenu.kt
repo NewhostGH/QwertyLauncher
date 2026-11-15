@@ -135,8 +135,8 @@ internal class AsciiMenu(
                 event.keyCode == KeyEvent.KEYCODE_Q ||
                 event.keyCode == KeyEvent.KEYCODE_X ||
                 event.keyCode == KeyEvent.KEYCODE_MENU -> close()
-            // Let Back reach the activity, which closes the menu too.
-            event.keyCode == KeyEvent.KEYCODE_BACK -> return false
+            // Back (unused, like every other key here) reaches the activity, which closes the menu too.
+            else -> return false
         }
         return true
     }

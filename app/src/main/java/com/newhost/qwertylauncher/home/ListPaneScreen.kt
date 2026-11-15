@@ -54,6 +54,9 @@ internal class ListPaneScreen(
     /** The pane's input line now, if it has one. */
     private var input: PaneInput? = null
 
+    /** True while the input line shows: keys the pane didn't use are typed into it. */
+    val hasInputLine: Boolean get() = input != null
+
     private val adapter: PaneRowAdapter = PaneRowAdapter(gridEnv) { position ->
         cursor.moveTo(position)
         open()

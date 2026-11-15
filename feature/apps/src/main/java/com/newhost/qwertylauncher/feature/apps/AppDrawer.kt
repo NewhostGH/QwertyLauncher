@@ -122,20 +122,14 @@ internal class DrawerPane(
     }
 
     override fun onKey(item: PaneRow.Item?, event: KeyEvent, host: LauncherHost): Boolean {
-        val app = appOf(item)
-        when {
-            app != null && event.keyCode == KeyEvent.KEYCODE_M -> host.showMenu(app.label, menu.items(app))
-            app != null && event.keyCode == KeyEvent.KEYCODE_T -> chooseType(app, host)
-            // The drawer has nothing to type into: any other printable key is taken here
-            // and does nothing, so it can't end up as text anywhere else.
-            else -> return isPrintable(event)
+        val app = appOf(item) ?: return false
+        when (event.keyCode) {
+            KeyEvent.KEYCODE_M -> host.showMenu(app.label, menu.items(app))
+            KeyEvent.KEYCODE_T -> chooseType(app, host)
+            // The shell drops the keys left over (KeyRouting).
+            else -> return false
         }
         return true
-    }
-
-    private fun isPrintable(event: KeyEvent): Boolean {
-        val char = event.unicodeChar
-        return char > 0 && !Character.isISOControl(char) && !event.isCtrlPressed && !event.isMetaPressed
     }
 
     /** A menu of the types to move [app] to, and, once moved, a way back to its own. */

@@ -310,6 +310,7 @@ internal class TileController(private val activity: HomeActivity) {
             isEnter(event) || event.keyCode == KeyEvent.KEYCODE_SPACE -> stopResizing(keep = true)
             event.keyCode == KeyEvent.KEYCODE_ESCAPE || event.keyCode == KeyEvent.KEYCODE_Q ||
                 event.keyCode == KeyEvent.KEYCODE_BACK -> stopResizing(keep = false)
+            else -> return false
         }
         return true
     }
@@ -321,7 +322,7 @@ internal class TileController(private val activity: HomeActivity) {
             VimKeys.isDown(event) || VimKeys.isRight(event) -> moveTile(+1)
             isEnter(event) || event.keyCode == KeyEvent.KEYCODE_ESCAPE || event.keyCode == KeyEvent.KEYCODE_SPACE ||
                 event.keyCode == KeyEvent.KEYCODE_Q -> stopMoving()
-            event.keyCode == KeyEvent.KEYCODE_BACK -> return false
+            else -> return false
         }
         return true
     }
