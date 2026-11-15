@@ -6,6 +6,12 @@ and versions are the app's `versionName`. Each release's short notes for F-Droid
 
 ## [Unreleased]
 
+### Added
+
+- `drawer` lists every app sorted by type: calls and messages, web, photos, games, tools and
+  more, worked out from what each app does and the category it declares. `drawer games` shows
+  just one type, and `t` on an app moves it to another type if the guess was wrong.
+
 ## [1.0.1] - 2026-10-26
 
 ### Fixed

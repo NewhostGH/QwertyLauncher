@@ -7,6 +7,7 @@ A terminal-style Android home screen made for phones with a physical QWERTY keyb
 and everything reachable from the keyboard.
 
 - Type on home to search apps, contacts, shortcuts and files, or run a command (`help` lists them)
+- `drawer`: every app, sorted by type (calls and messages, web, games, tools...)
 - Tiles: clock, alarm, weather, sun and moon, agenda, favourites, suggestions, notifications,
   music, battery, system, network, sensors, news, todo, games
 - Sir Alex of Quertia, a herald who lives on your home screen
