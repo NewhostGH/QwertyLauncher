@@ -5,7 +5,7 @@ import com.newhost.qwertylauncher.core.LauncherModule
 import com.newhost.qwertylauncher.core.ModuleScope
 import com.newhost.qwertylauncher.core.service
 
-/** Installed apps: the catalog service, app and shortcut search, rename, info and uninstall. */
+/** Installed apps: the catalog service, app and shortcut search, the drawer, rename, info and uninstall. */
 class AppsModule : LauncherModule {
     override val id = "apps"
     override val title = "apps"
@@ -23,6 +23,8 @@ class AppsModule : LauncherModule {
         scope.searchProvider(AppSearchProvider(catalog, settings, menu))
         scope.searchProvider(ShortcutSearchProvider(ShortcutIndex(scope.appContext), catalog, settings))
         scope.command(RenameCommand(catalog, names))
+        val types = AppTypes(scope.appContext, catalog)
+        scope.command(DrawerCommand(catalog, types, DrawerPane(catalog, types, menu, scope.services)))
         scope.command(
             AppActionCommand("uninstall", "remove an app", catalog) { app, host -> AppActions.uninstall(app, host) },
         )

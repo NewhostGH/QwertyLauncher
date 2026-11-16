@@ -2,6 +2,7 @@ package com.newhost.qwertylauncher.feature.apps
 
 import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.content.pm.LauncherActivityInfo
 import android.content.pm.LauncherApps
 import android.content.pm.PackageManager
@@ -126,6 +127,9 @@ internal class LauncherAppsCatalog(
     private fun evened(icon: Drawable): Drawable = if (icon is AdaptiveIconDrawable) icon else TrimmedDrawable(icon)
 
     fun launchCount(app: AppEntry): Int = usage.getInt(app.key, 0)
+
+    /** The app's package details (its category, whether it came with the phone), as last loaded. */
+    fun appInfo(app: AppEntry): ApplicationInfo? = activities[app.key]?.applicationInfo
 
     fun openDetails(app: AppEntry) = launcherApps.startAppDetailsActivity(app.component, app.user, null, null)
 

@@ -2,6 +2,7 @@ package com.newhost.qwertylauncher.home
 
 import android.view.KeyEvent
 import android.view.MotionEvent
+import com.newhost.qwertylauncher.core.KeyRouting
 import androidx.core.view.isVisible
 import com.newhost.qwertylauncher.ui.DragSteps
 import com.newhost.qwertylauncher.ui.InputDevices
@@ -51,22 +52,28 @@ internal class HomeInput(private val activity: HomeActivity) {
                 if (event.action == KeyEvent.ACTION_UP) activity.panes.backFromScreen()
                 return true
             }
-            open.onKey(event)
-            return true
+            return KeyRouting.keep(open.onKey(event), event.keyCode)
         }
         if (activity.prompt.onEnterUp(event)) return true
         if (InputMonitor.enabled && event.action == KeyEvent.ACTION_DOWN) log.d(InputMonitor.describe(event))
         return event.action == KeyEvent.ACTION_DOWN && handleKey(event)
     }
 
-    /** A key going down: to the menu, whatever is being arranged, the open pane, or else the prompt. */
+    /**
+     * A key going down: to the menu, whatever is being arranged, the open pane, or else the prompt.
+     * Whichever of the first three is open owns the keyboard ([KeyRouting]): the keys it doesn't
+     * use are dropped, except system keys, and a pane's own input line, which types them.
+     */
     fun handleKey(event: KeyEvent): Boolean {
         val menu = activity.menu
-        if (menu.isOpen) return menu.onKey(event)
-        if (activity.topBar.movingGroup != null) return activity.topBar.onMoveKey(event)
-        if (activity.tiles.isMoving) return activity.tiles.onMoveKey(event)
-        if (activity.tiles.isResizing) return activity.tiles.onResizeKey(event)
-        activity.panes.onKey(event)?.let { return it }
+        val code = event.keyCode
+        if (menu.isOpen) return KeyRouting.keep(menu.onKey(event), code)
+        if (activity.topBar.movingGroup != null) return KeyRouting.keep(activity.topBar.onMoveKey(event), code)
+        if (activity.tiles.isMoving) return KeyRouting.keep(activity.tiles.onMoveKey(event), code)
+        if (activity.tiles.isResizing) return KeyRouting.keep(activity.tiles.onResizeKey(event), code)
+        activity.panes.onKey(event)?.let { used ->
+            return if (!used && activity.panes.hasInputLine) false else KeyRouting.keep(used, code)
+        }
         val searching = viewModel.state.value.searching
         when (event.keyCode) {
             KeyEvent.KEYCODE_PAGE_UP -> {

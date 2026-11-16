@@ -6,6 +6,17 @@ and versions are the app's `versionName`. Each release's short notes for F-Droid
 
 ## [Unreleased]
 
+### Added
+
+- `drawer` lists every app sorted by type: calls and messages, web, photos, games, tools and
+  more, worked out from what each app does and the category it declares. `drawer games` shows
+  just one type, and `t` on an app moves it to another type if the guess was wrong.
+
+### Fixed
+
+- Keys a pane, menu, game or arranging mode doesn't use are no longer passed on, so they can't
+  type into anything behind it; volume, media and call keys work again while one is open.
+
 ## [1.0.1] - 2026-10-26
 
 ### Fixed

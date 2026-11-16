@@ -26,7 +26,11 @@ interface ListPane {
     /** The user opened [item]. Return true to close the pane afterwards. */
     fun onOpen(item: PaneRow.Item, host: LauncherHost): Boolean
 
-    /** Any other key, with the item under the cursor (null if none). Return true if handled. */
+    /**
+     * Any other key, with the item under the cursor (null if none). Return true
+     * if handled. A key left unhandled is dropped (or typed into [input], if
+     * there is one), never passed on: see [KeyRouting].
+     */
     fun onKey(item: PaneRow.Item?, event: KeyEvent, host: LauncherHost): Boolean = false
 
     /**

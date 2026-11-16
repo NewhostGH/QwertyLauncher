@@ -354,6 +354,7 @@ internal class TopBarController(private val activity: HomeActivity) {
             event.repeatCount > 0 && isEnter(event) -> Unit
             isEnter(event) || event.keyCode == KeyEvent.KEYCODE_ESCAPE || event.keyCode == KeyEvent.KEYCODE_SPACE ||
                 event.keyCode == KeyEvent.KEYCODE_Q || event.keyCode == KeyEvent.KEYCODE_BACK -> stopMovingGroup()
+            else -> return false
         }
         return true
     }

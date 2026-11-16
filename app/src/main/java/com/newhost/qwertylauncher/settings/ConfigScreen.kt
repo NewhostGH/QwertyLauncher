@@ -196,7 +196,7 @@ internal class ConfigScreen(
             event.keyCode == KeyEvent.KEYCODE_DPAD_UP -> cursor.move(-1)
             event.keyCode == KeyEvent.KEYCODE_DPAD_DOWN -> cursor.move(+1)
             else -> {
-                val char = event.unicodeChar.takeIf { it != 0 }?.toChar() ?: return true
+                val char = event.unicodeChar.takeIf { it != 0 }?.toChar() ?: return false
                 if (!char.isISOControl()) setQuery(text + char)
             }
         }
@@ -262,8 +262,9 @@ internal class ConfigScreen(
                 edit.typed.toIntOrNull()?.let { edit.draft = it }
                 showEdit()
             }
+            // The rest isn't the editor's; the shell keeps it from everything else (KeyRouting).
+            else -> return false
         }
-        // Everything else is swallowed: the editor has the keyboard until enter or esc.
         return true
     }
 

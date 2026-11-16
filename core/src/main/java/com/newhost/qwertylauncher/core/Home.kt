@@ -145,7 +145,10 @@ interface HomePanel {
 interface HomeScreen {
     fun createView(host: LauncherHost, parent: ViewGroup): View
 
-    /** A key going down (with its repeats) or up. Return true if it was used. */
+    /**
+     * A key going down (with its repeats) or up. Return true if it was used.
+     * An unused key is dropped, except system keys like volume: see [KeyRouting].
+     */
     fun onKey(event: KeyEvent): Boolean = false
 
     /** Scrolling, in whole steps: positive is down, or right. */

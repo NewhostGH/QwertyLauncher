@@ -24,6 +24,8 @@ kotlin {
 
 dependencies {
     implementation(project(":core"))
+
+    testImplementation(libs.junit)
 }
 
 // Built into a module zip the launcher loads at run time.
